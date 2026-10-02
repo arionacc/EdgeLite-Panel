@@ -10,6 +10,14 @@ EdgeLite puts a thin handle on the edge of your screen. Swipe it inward (or tap 
 - Languages: English and Indonesian (follows the phone language)
 - License: MIT
 
+- ![Kotlin](https://img.shields.io/badge/Kotlin-1.9.24-7F52FF?logo=kotlin&logoColor=white)
+![Gradle](https://img.shields.io/badge/Gradle-8.7-02303A?logo=gradle&logoColor=white)
+![JDK](https://img.shields.io/badge/JDK-17-ED8B00?logo=openjdk&logoColor=white)
+![Android](https://img.shields.io/badge/Android-API_26%2B-3DDC84?logo=android&logoColor=white)
+![Target SDK](https://img.shields.io/badge/Target_SDK-34-3DDC84?logo=android&logoColor=white)
+![Release](https://img.shields.io/github/v/release/arionacc/EdgeLite-Panel)
+![License](https://img.shields.io/github/license/arionacc/EdgeLite-Panel)
+
 ## Table of contents
 
 1. [Features](#features)
