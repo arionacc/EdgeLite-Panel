@@ -10,7 +10,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.content.res.Configuration
-import android.graphics.Color
+import android.graphics.Typeface
 import android.graphics.PixelFormat
 import android.graphics.Rect
 import android.graphics.drawable.GradientDrawable
@@ -48,7 +48,7 @@ class EdgeService : Service() {
         private const val MATCH = ViewGroup.LayoutParams.MATCH_PARENT
         private const val WRAP = ViewGroup.LayoutParams.WRAP_CONTENT
         private val ACCENT = 0xFF3E91FF.toInt()
-        private val HANDLE_COLOR = 0xB3808080.toInt()
+        private val HANDLE_COLOR = 0x80E6E6E6.toInt()
 
         fun start(ctx: Context) {
             Prefs(ctx).enabled = true
@@ -245,10 +245,8 @@ class EdgeService : Service() {
 
         val (_, sh) = screenSize()
         val right = prefs.side == EdgeSide.RIGHT
-        val dark = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
-            Configuration.UI_MODE_NIGHT_YES
-        val cardColor = if (dark) 0xF2242428.toInt() else 0xF2FAFAFA.toInt()
-        val textColor = if (dark) 0xFFEDEDED.toInt() else 0xFF1C1C1E.toInt()
+        val cardColor = Ui.PANEL
+        val textColor = Ui.TEXT
 
         val pm = packageManager
         val pkgs = prefs.pinned.filter { pm.getLaunchIntentForPackage(it) != null }
@@ -260,6 +258,7 @@ class EdgeService : Service() {
             val r = dp(28).toFloat()
             background = GradientDrawable().apply {
                 setColor(cardColor)
+                setStroke(dp(1), Ui.OUTLINE)
                 cornerRadii = if (right) {
                     floatArrayOf(r, r, 0f, 0f, 0f, 0f, r, r)
                 } else {
@@ -280,6 +279,7 @@ class EdgeService : Service() {
                 text = label
                 textSize = 11f
                 gravity = Gravity.CENTER
+                setTypeface(typeface, Typeface.BOLD)
                 setPadding(0, dp(7), 0, dp(7))
                 setOnClickListener {
                     prefs.mode = mode
@@ -291,7 +291,7 @@ class EdgeService : Service() {
         }
         styleChips(textColor)
 
-        val divider = View(ui).apply { setBackgroundColor(0x33808080) }
+        val divider = View(ui).apply { setBackgroundColor(Ui.OUTLINE) }
         card.addView(divider, LinearLayout.LayoutParams(MATCH, dp(1)).apply {
             topMargin = dp(4)
             bottomMargin = dp(4)
@@ -319,12 +319,9 @@ class EdgeService : Service() {
         card.addView(scroll, LinearLayout.LayoutParams(MATCH, 0, 1f))
 
         // Tombol pengaturan
-        val gear = TextView(ui).apply {
-            text = "⚙"
-            textSize = 20f
-            gravity = Gravity.CENTER
-            setTextColor(textColor)
-            setPadding(0, dp(8), 0, dp(4))
+        val gear = ImageView(ui).apply {
+            setImageResource(R.drawable.ic_tune)
+            setPadding(dp(14), dp(10), dp(14), dp(6))
             setOnClickListener {
                 this@EdgeService.startActivity(
                     Intent(this@EdgeService, MainActivity::class.java)
@@ -340,7 +337,7 @@ class EdgeService : Service() {
         val cardH = min(estimated, (sh * 0.85f).toInt())
 
         val root = FrameLayout(ui)
-        root.setBackgroundColor(0x33000000)
+        root.setBackgroundColor(0x66000000)
         root.setOnClickListener { closePanel() }
         root.addView(
             card,
@@ -385,9 +382,10 @@ class EdgeService : Service() {
             val selected = mode == prefs.mode
             tv.background = GradientDrawable().apply {
                 cornerRadius = dp(14).toFloat()
-                setColor(if (selected) ACCENT else 0x1F808080)
+                setColor(if (selected) Ui.LIGHT else Ui.SURFACE)
+                setStroke(dp(1), if (selected) Ui.LIGHT else Ui.OUTLINE)
             }
-            tv.setTextColor(if (selected) Color.WHITE else textColor)
+            tv.setTextColor(if (selected) Ui.ON_LIGHT else Ui.MUTED)
         }
     }
 
