@@ -1,0 +1,5 @@
+<resources>
+    <style name="Theme.EdgeLite" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">#3E91FF</item>
+    </style>
+</resources>
