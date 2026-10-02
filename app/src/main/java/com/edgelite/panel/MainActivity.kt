@@ -314,8 +314,8 @@ class MainActivity : AppCompatActivity() {
         // Tampilan
         add(caps("Sisi layar"), 26)
         add(
-            chipGroup(listOf("Kanan", "Kiri"), if (prefs.side == EdgeSide.RIGHT) 0 else 1) {
-                prefs.side = if (it == 0) EdgeSide.RIGHT else EdgeSide.LEFT
+            chipGroup(listOf("Kiri", "Kanan"), if (prefs.side == EdgeSide.LEFT) 0 else 1) {
+                prefs.side = if (it == 0) EdgeSide.LEFT else EdgeSide.RIGHT
                 EdgeService.refresh(this)
             }, 10
         )
