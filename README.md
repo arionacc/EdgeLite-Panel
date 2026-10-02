@@ -118,5 +118,3 @@ EdgeLite is an independent project and is not affiliated with, endorsed by, or s
 ## License
 
 MIT, created by Arion. See [LICENSE](LICENSE).
-
-Source code: https://github.com/arionacc/EdgeLite-Panel
