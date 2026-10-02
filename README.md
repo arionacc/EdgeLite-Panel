@@ -9,7 +9,6 @@ EdgeLite puts a thin handle on the edge of your screen. Swipe it inward (or tap 
 - Minimum Android: 8.0 (API 26), built against Android 14 (API 34)
 - Languages: English and Indonesian (follows the phone language)
 - License: MIT
-- Source code: https://github.com/arionacc/EdgeLite-Panel
 
 ## Table of contents
 
