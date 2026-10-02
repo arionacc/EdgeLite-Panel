@@ -32,5 +32,3 @@ EdgeLite adalah proyek independen dan tidak terafiliasi dengan, didukung oleh, a
 ## Lisensi
 
 MIT. Dibuat oleh Arion. Lihat berkas [LICENSE](LICENSE).
-
-Source code: https://github.com/arionacc/EdgeLite-Panel
