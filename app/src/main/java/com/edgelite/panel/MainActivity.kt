@@ -40,7 +40,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var pinnedCaption: TextView
     private lateinit var pinnedRow: LinearLayout
     private lateinit var overlayRow: Row
-    private lateinit var a11yRow: Row
     private lateinit var batteryRow: Row
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -287,10 +286,6 @@ class MainActivity : AppCompatActivity() {
             openOverlaySettings()
         }
         add(overlayRow.view, 10)
-        a11yRow = permRow("Layanan aksesibilitas", "Untuk split screen otomatis") {
-            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-        }
-        add(a11yRow.view, 8)
         batteryRow = permRow("Abaikan optimasi baterai", "Agar panel tidak dimatikan sistem") {
             requestBatteryExemption()
         }
@@ -322,30 +317,44 @@ class MainActivity : AppCompatActivity() {
 
         add(caps("Mode buka default"), 22)
         add(
-            chipGroup(listOf("Penuh", "Split", "Jendela"), prefs.mode.ordinal) {
-                prefs.mode = LaunchMode.values()[it]
+            chipGroup(listOf("Jendela", "Penuh"), if (prefs.mode == LaunchMode.WINDOW) 0 else 1) {
+                prefs.mode = if (it == 0) LaunchMode.WINDOW else LaunchMode.FULL
             }, 10
         )
 
-        add(caps("Handle dan jendela"), 26)
+        // Jendela mengambang
+        add(caps("Jendela mengambang"), 26)
+        val preview = WindowPreview(this).apply {
+            update(prefs.windowWidthPercent, prefs.windowHeightPercent)
+        }
+        add(preview, 12)
+        add(slider("Lebar jendela", 30f, 100f, prefs.windowWidthPercent.toFloat(), " %") {
+            prefs.windowWidthPercent = it
+            preview.update(it, prefs.windowHeightPercent)
+        }, 8)
+        add(slider("Tinggi jendela", 30f, 100f, prefs.windowHeightPercent.toFloat(), " %") {
+            prefs.windowHeightPercent = it
+            preview.update(prefs.windowWidthPercent, it)
+        }, 8)
+
+        // Handle
+        add(caps("Handle"), 26)
         add(slider("Tinggi handle", 60f, 240f, prefs.handleHeightDp.toFloat(), " dp") {
             prefs.handleHeightDp = it
         }, 10)
         add(slider("Posisi handle dari atas", 10f, 90f, prefs.handleOffsetPercent.toFloat(), " %") {
             prefs.handleOffsetPercent = it
         }, 8)
-        add(slider("Ukuran jendela mengambang", 50f, 95f, prefs.windowSizePercent.toFloat(), " %") {
-            prefs.windowSizePercent = it
-        }, 8)
 
         // Catatan
-        add(caps("Mode jendela"), 26)
+        add(caps("Catatan"), 26)
         add(
             TextView(this).apply {
                 text = "Jendela mengambang memakai fitur freeform Android. Di One UI, aktifkan " +
                     "\"Aktifkan jendela freeform\" dan \"Paksa aktivitas dapat diubah ukurannya\" " +
                     "lewat menu titik tiga di kanan atas, pilih Opsi Pengembang. " +
-                    "Jika gagal, aplikasi dibuka layar penuh."
+                    "Aplikasi yang tidak mendukung perubahan ukuran bisa mengabaikan ukuran jendela, " +
+                    "dan jika gagal, aplikasi dibuka layar penuh."
                 textSize = 12.5f
                 setLineSpacing(0f, 1.15f)
                 setTextColor(Ui.MUTED)
@@ -363,7 +372,6 @@ class MainActivity : AppCompatActivity() {
 
     private fun refreshStatus() {
         setStatus(overlayRow, Settings.canDrawOverlays(this))
-        setStatus(a11yRow, EdgeAccessibilityService.instance != null)
         val pm = getSystemService(PowerManager::class.java)
         setStatus(batteryRow, pm.isIgnoringBatteryOptimizations(packageName))
         panelCaption.text = if (prefs.enabled) "PANEL (AKTIF)" else "PANEL (MATI)"
@@ -404,12 +412,10 @@ class MainActivity : AppCompatActivity() {
     private fun showMenu(anchor: View) {
         PopupMenu(this, anchor).apply {
             menu.add(0, 1, 0, "Opsi Pengembang")
-            menu.add(0, 2, 1, "Pengaturan aksesibilitas")
             menu.add(0, 3, 2, "Tentang")
             setOnMenuItemClickListener { item ->
                 when (item.itemId) {
                     1 -> openDeveloperOptions()
-                    2 -> startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
                     3 -> showAbout()
                 }
                 true

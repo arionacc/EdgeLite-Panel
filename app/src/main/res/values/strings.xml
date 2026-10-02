@@ -1,5 +1,4 @@
 <resources>
     <string name="app_name">EdgeLite Panel</string>
     <string name="tile_label">Panel Tepi</string>
-    <string name="a11y_desc">EdgeLite hanya memakai layanan ini untuk mengaktifkan mode split screen dan mendeteksi jumlah jendela aplikasi. Tidak ada isi layar yang dibaca atau dikirim ke mana pun.</string>
 </resources>

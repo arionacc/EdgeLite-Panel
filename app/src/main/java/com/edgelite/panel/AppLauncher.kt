@@ -5,88 +5,40 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Rect
-import android.os.Handler
-import android.os.Looper
 import android.widget.Toast
 
 /**
- * Membuka aplikasi dalam tiga mode: layar penuh, split screen, atau jendela mengambang.
- * Setiap mode punya fallback supaya aplikasi tidak pernah gagal total.
+ * Membuka aplikasi dalam jendela mengambang (ukuran lebar dan tinggi bisa diatur)
+ * atau layar penuh. Jika jendela gagal, aplikasi tetap dibuka layar penuh.
  */
 object AppLauncher {
 
-    private val main = Handler(Looper.getMainLooper())
-
-    fun launch(
-        ctx: Context,
-        pkg: String,
-        mode: LaunchMode,
-        windowPercent: Int,
-        done: () -> Unit
-    ) {
+    fun launch(ctx: Context, pkg: String, mode: LaunchMode, widthPct: Int, heightPct: Int) {
         val intent = ctx.packageManager.getLaunchIntentForPackage(pkg)
         if (intent == null) {
             toast(ctx, "Aplikasi tidak ditemukan")
-            done()
             return
         }
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         try {
             when (mode) {
-                LaunchMode.FULL -> {
-                    ctx.startActivity(intent)
-                    done()
-                }
-                LaunchMode.SPLIT -> launchSplit(ctx, intent, done)
-                LaunchMode.WINDOW -> {
-                    launchWindow(ctx, intent, windowPercent)
-                    done()
-                }
+                LaunchMode.FULL -> ctx.startActivity(intent)
+                LaunchMode.WINDOW -> launchWindow(ctx, intent, widthPct, heightPct)
             }
         } catch (e: Exception) {
             toast(ctx, "Gagal membuka aplikasi")
-            done()
         }
     }
 
-    private fun launchSplit(ctx: Context, intent: Intent, done: () -> Unit) {
-        val adjacent = Intent(intent).addFlags(Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT)
-        val acc = EdgeAccessibilityService.instance
-
-        if (acc == null) {
-            toast(ctx, "Aktifkan layanan aksesibilitas agar split screen lebih andal")
-            ctx.startActivity(adjacent)
-            done()
-            return
-        }
-
-        if (acc.appWindowCount() >= 2) {
-            // Sudah dalam split screen: cukup buka di sisi lain.
-            ctx.startActivity(adjacent)
-            done()
-        } else {
-            // Masuk split screen dulu, lalu buka aplikasi kedua di sisi sebelahnya.
-            acc.toggleSplitScreen()
-            main.postDelayed({
-                try {
-                    ctx.startActivity(adjacent)
-                } catch (e: Exception) {
-                    toast(ctx, "Gagal membuka aplikasi di split screen")
-                }
-                done()
-            }, 700)
-        }
-    }
-
-    private fun launchWindow(ctx: Context, intent: Intent, percent: Int) {
+    private fun launchWindow(ctx: Context, intent: Intent, widthPct: Int, heightPct: Int) {
         if (!ctx.packageManager.hasSystemFeature(PackageManager.FEATURE_FREEFORM_WINDOW_MANAGEMENT)) {
             toast(ctx, "Mode jendela butuh freeform aktif di Opsi Pengembang")
         }
         val dm = ctx.resources.displayMetrics
         val w = dm.widthPixels
         val h = dm.heightPixels
-        val bw = w * percent / 100
-        val bh = h * percent / 100
+        val bw = (w * widthPct / 100).coerceIn(1, w)
+        val bh = (h * heightPct / 100).coerceIn(1, h)
         val left = (w - bw) / 2
         val top = (h - bh) / 2
 

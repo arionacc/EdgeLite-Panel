@@ -271,9 +271,8 @@ class EdgeService : Service() {
         // Pemilih mode buka aplikasi
         modeChips.clear()
         listOf(
-            LaunchMode.FULL to "Penuh",
-            LaunchMode.SPLIT to "Split",
-            LaunchMode.WINDOW to "Jendela"
+            LaunchMode.WINDOW to "Jendela",
+            LaunchMode.FULL to "Penuh"
         ).forEach { (mode, label) ->
             val tv = TextView(ui).apply {
                 text = label
@@ -333,7 +332,7 @@ class EdgeService : Service() {
         card.addView(gear, LinearLayout.LayoutParams(MATCH, WRAP))
 
         val cardW = dp(88)
-        val estimated = dp(200 + 72 * maxOf(pkgs.size, 1))
+        val estimated = dp(170 + 72 * maxOf(pkgs.size, 1))
         val cardH = min(estimated, (sh * 0.85f).toInt())
 
         val root = FrameLayout(ui)
@@ -417,24 +416,13 @@ class EdgeService : Service() {
         item.addView(label, LinearLayout.LayoutParams(MATCH, WRAP).apply { topMargin = dp(2) })
 
         item.setOnClickListener {
-            ghostPanel()
-            AppLauncher.launch(this, pkg, prefs.mode, prefs.windowSizePercent) { closePanel() }
+            AppLauncher.launch(
+                this, pkg, prefs.mode,
+                prefs.windowWidthPercent, prefs.windowHeightPercent
+            )
+            closePanel()
         }
         return item
-    }
-
-    /**
-     * Sembunyikan tampilan panel tapi biarkan jendelanya tetap ada sampai aplikasi selesai
-     * dibuka. Jendela overlay yang masih terlihat membuat Android mengizinkan peluncuran
-     * aplikasi dari latar belakang.
-     */
-    private fun ghostPanel() {
-        val root = panelRoot ?: return
-        val lp = panelLp ?: return
-        root.visibility = View.INVISIBLE
-        lp.flags = (lp.flags or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE) and
-            WindowManager.LayoutParams.FLAG_BLUR_BEHIND.inv()
-        runCatching { wm.updateViewLayout(root, lp) }
     }
 
     private fun closePanel(animated: Boolean = true) {
