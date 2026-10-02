@@ -99,18 +99,6 @@ Apps from the backup that are not installed on the phone are skipped. Import onl
 - No drag reordering, folders, or shortcuts in the panel yet.
 - Split screen is not included because Samsung already provides it.
 
-## Build
-
-Built with Kotlin 1.9.24, AGP 8.5.2, Gradle 8.7, JDK 17 (min SDK 26, target SDK 34).
-
-**GitHub Actions:** push to `main`, open the **Actions** tab, and download `EdgeLite-debug-apk` from the run. Push a tag like `v1.0.0` to attach the APK to a Release.
-
-**Local:** with Gradle 8.7 and JDK 17 installed, run `gradle assembleDebug`. The APK is at `app/build/outputs/apk/debug/app-debug.apk`.
-
-If the build fails after uploading a new zip over the repo, delete the whole `app/` folder first, then upload the new one, because old files are not removed. If `.github` looks missing, create `.github/workflows/build.yml` in the GitHub web editor.
-
-To add a language, copy `app/src/main/res/values/strings.xml` to a new `values-xx` folder, translate it, and add the code to `res/xml/locales_config.xml`.
-
 ## Disclaimer
 
 EdgeLite is an independent project and is not affiliated with, endorsed by, or sponsored by Samsung Electronics. Samsung, One UI, and Edge Panel are trademarks of their respective owners, mentioned only to describe compatibility.
