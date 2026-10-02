@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">EdgeLite Panel</string>
+    <string name="tile_label">Panel Tepi</string>
+    <string name="a11y_desc">Menampilkan handle di tepi layar dan panel aplikasi favorit. Layanan ini tidak membaca isi layar dan tidak mengumpulkan data apa pun.</string>
+</resources>
