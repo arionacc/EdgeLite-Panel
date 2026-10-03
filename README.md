@@ -103,6 +103,8 @@ Apps from the backup that are not installed on the phone are skipped. Import onl
 
 EdgeLite is an independent project and is not affiliated with, endorsed by, or sponsored by Samsung Electronics. Samsung, One UI, and Edge Panel are trademarks of their respective owners, mentioned only to describe compatibility.
 
+**EdgeLite is built and tested only on Samsung One UI. On other phones or Android skins it may not work as expected, or may not work at all. This includes the accessibility overlay, the floating window mode, and the lock screen behavior. Use it at your own discretion**
+
 ## License
 
 MIT, created by Arion. See [LICENSE](LICENSE).
