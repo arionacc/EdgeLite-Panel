@@ -41,6 +41,8 @@ A thin handle sits on the edge of your screen. Swipe it inward (or tap it) and a
 
 Download `EdgeLite-Panel.apk` from the [Releases](https://github.com/arionacc/EdgeLite-Panel/releases) page and open it on your phone.
 
+**Blocked by Google Play Protect?** Play Protect blocks apps installed outside the Play Store when they use an accessibility service, as EdgeLite does. Open Play Store, tap your profile icon, Play Protect, Settings, and turn off "Scan apps with Play Protect". Install EdgeLite, then turn it back on.
+
 Requires Android 8.0 or newer. Tested on One UI 8.0 and 8.5
 
 ## Setup
