@@ -3,7 +3,7 @@
 ![Kotlin](https://img.shields.io/badge/Kotlin-1.9.24-7F52FF?logo=kotlin&logoColor=white)
 ![Gradle](https://img.shields.io/badge/Gradle-8.7-02303A?logo=gradle&logoColor=white)
 ![Android](https://img.shields.io/badge/Android-API_26%2B-3DDC84?logo=android&logoColor=white)
-![License](https://img.shields.io/github/license/arionacc/EdgeLite-Panel)
+![License](https://img.shields.io/badge/License-GPL--3.0-blue)
 
 An alternative edge panel for Samsung One UI phones that do not have the built-in Edge Panel.
 
