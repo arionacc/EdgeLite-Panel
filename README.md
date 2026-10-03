@@ -125,3 +125,7 @@ Created by Arion. EdgeLite is free software licensed under the [GNU General Publ
 Versions 1.0.2 and earlier were released under the MIT License, and copies already obtained under MIT stay under MIT. Version 1.0.3 and later are licensed under GPL-3.0.
 
 Unless you state otherwise, any contribution you submit to this project is licensed under GPL-3.0.
+
+## Why GPL-3.0?
+
+EdgeLite is licensed under GPL-3.0 to ensure it stays free and open source forever. This prevents anyone from forking the project, closing the source, and selling features as in-app purchases. If you use EdgeLite's code, your project must also be open source.
