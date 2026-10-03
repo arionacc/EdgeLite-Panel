@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/Banner.png" alt="EdgeLite Panel" width="100%">
+</p>
+
 # EdgeLite Panel
 
 ![Kotlin](https://img.shields.io/badge/Kotlin-1.9.24-7F52FF?logo=kotlin&logoColor=white)
@@ -20,6 +24,18 @@ A thin handle sits on the edge of your screen. Swipe it inward (or tap it) and a
 - Autostart after reboot
 - Export and import settings as a JSON file
 - English and Indonesian (follows the phone language)
+
+## Screenshot
+<table align="center">
+  <tr>
+    <th>Preview 1</th>
+    <th>Preview 2</th>
+  </tr>
+  <tr>
+    <td><img src="docs/Preview_1.png" width="280" alt="Preview 1"></td>
+    <td><img src="docs/Preview_2.png" width="280" alt="Preview 2"></td>
+  </tr>
+</table>
 
 ## Install
 
