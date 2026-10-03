@@ -25,7 +25,7 @@ A thin handle sits on the edge of your screen. Swipe it inward (or tap it) and a
 
 Download `EdgeLite-Panel.apk` from the [Releases](https://github.com/arionacc/EdgeLite-Panel/releases) page and open it on your phone.
 
-Requires Android 8.0 or newer. Tested on Samsung One UI 8.0 and 8.5
+Requires Android 8.0 or newer. Tested on One UI 8.0 and 8.5
 
 ## Setup
 
