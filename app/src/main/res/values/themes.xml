@@ -1,0 +1,15 @@
+<resources>
+    <style name="Theme.EdgeLite" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">#E6E6E6</item>
+        <item name="colorOnPrimary">#0F0F0F</item>
+        <item name="colorSurface">#0F0F0F</item>
+        <item name="colorOnSurface">#EDEDED</item>
+        <item name="colorSurfaceContainerHigh">#1C1C1C</item>
+        <item name="colorOutline">#2E2E2E</item>
+        <item name="android:windowBackground">#0F0F0F</item>
+        <item name="android:statusBarColor">#0F0F0F</item>
+        <item name="android:navigationBarColor">#0F0F0F</item>
+        <item name="android:textColorPrimary">#EDEDED</item>
+        <item name="android:textColorSecondary">#8A8A8A</item>
+    </style>
+</resources>
