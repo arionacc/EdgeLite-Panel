@@ -24,6 +24,7 @@ A thin handle sits on the edge of your screen. Swipe it inward (or tap it) and a
 - Autostart after reboot
 - Export and import settings as a JSON file
 - English and Indonesian (follows the phone language)
+- Quick access page: swipe the panel sideways for a second page with system shortcuts (notifications, quick settings, recent apps, home, back, screenshot, lock screen, power menu)
 
 ## Screenshot
 <table align="center">
@@ -59,6 +60,7 @@ Menu names can differ slightly between One UI versions.
 ## Usage
 
 - **Open the panel:** swipe the handle inward or tap it
+- **Quick access:** in settings, open Quick access and tap Choose shortcuts. Then swipe the panel sideways to see them. The panel size does not change.
 - **Open an app:** tap its icon
 - **Close the panel:** tap the dimmed area outside it
 - **Turn off:** use **Disable** or the Quick Settings tile (hides the handle only). To stop the service completely, switch it off in Accessibility.
