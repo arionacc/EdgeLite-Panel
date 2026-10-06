@@ -24,7 +24,7 @@ A thin handle sits on the edge of your screen. Swipe it inward (or tap it) and a
 - Autostart after reboot
 - Export and import settings as a JSON file
 - English and Indonesian (follows the phone language)
-- Quick access page: swipe the panel sideways for a second page with system shortcuts (notifications, quick settings, recent apps, home, back, screenshot, lock screen, power menu)
+- Quick access page: swipe the panel sideways for a second page with system shortcuts (notifications, quick settings, recent apps, home, back, screenshot, lock screen, power menu, volume, etc)
 
 ## Screenshot
 <table align="center">
