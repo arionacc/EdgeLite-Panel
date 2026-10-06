@@ -15,7 +15,26 @@ android {
         versionName = "1.2.5"
     }
 
+    // Tanda tangan tetap untuk APK debug yang dibuat GitHub Actions, supaya update bisa dipasang
+    // di atas versi lama tanpa uninstall. Kunci dibaca dari variabel lingkungan (GitHub Secrets).
+    // Bila tidak ada (build lokal, fork, pull request, F-Droid), dipakai kunci debug bawaan.
+    // Varian release sengaja tidak disentuh: F-Droid menandatanganinya dengan kuncinya sendiri.
+    val keystorePath = System.getenv("EDGELITE_KEYSTORE_FILE")
+    signingConfigs {
+        if (keystorePath != null && file(keystorePath).exists()) {
+            create("fixed") {
+                storeFile = file(keystorePath)
+                storePassword = System.getenv("EDGELITE_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("EDGELITE_KEY_ALIAS")
+                keyPassword = System.getenv("EDGELITE_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
+        debug {
+            signingConfigs.findByName("fixed")?.let { signingConfig = it }
+        }
         release {
             isMinifyEnabled = false
         }
