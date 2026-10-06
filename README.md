@@ -46,6 +46,10 @@ Download `EdgeLite-Panel.apk` from the [Releases](https://github.com/arionacc/Ed
 
 Requires Android 8.0 or newer. Tested on One UI 8.0 and 8.5
 
+## Changelog
+
+See [CHANGELOG](CHANGELOG.md) for a full history of changes and release notes for each version.
+
 ## Setup
 
 1. Tap **Enable panel**, then in Accessibility, Installed apps, turn on **EdgeLite Panel**.
