@@ -4,6 +4,14 @@ All notable changes to EdgeLite Panel are listed here, newest first.
 
 Versions 1.0.4 and 1.2.6 were never published. Their changes are included in 1.0.5 and 1.2.7.
 
+## 1.2.9
+
+### Changed
+- The Volume and Brightness sliders are now a single wide bar instead of two thin bars side by side. Use the switch to change between Volume and Brightness.
+- Changing mode now has a transition: the old bar slides out and fades while the new one slides in, and the percentage and name fade with it.
+- Swiping between panel pages is softer and smoother, and pages are cached while they move so fading stays fluid even with many icons.
+- The inactive bar is now hidden instead of dimmed.
+
 ## 1.2.8
 
 ### Changed
