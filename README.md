@@ -77,17 +77,6 @@ Menu names can differ slightly between One UI versions.
 
 Slider changes apply when you lift your finger and show after the panel is reopened.
 
-## Updating without losing settings
-
-Debug builds are signed with a new key every time, so an update means uninstalling the old version first, which erases settings.
-
-1. Open **Export and import**, tap **Export**, and save the file.
-2. Uninstall the old version and install the new one.
-3. Tap **Import** and choose the file.
-4. Turn the EdgeLite Panel accessibility service on again.
-
-Apps from the backup that are not installed on the phone are skipped. Import only accepts valid EdgeLite files and limits values to the slider ranges.
-
 ## Privacy and permissions
 
 - **Accessibility service:** only draws the handle and panel. It does not read the screen and listens to no events.
