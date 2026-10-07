@@ -4,6 +4,13 @@ All notable changes to EdgeLite Panel are listed here, newest first.
 
 Versions 1.0.4 and 1.2.6 were never published. Their changes are included in 1.0.5 and 1.2.7.
 
+## 1.3.0
+
+### Changed
+- Page swipes are now softer and slower: the page glides into place in about half a second without bouncing, and bounces slightly when you pull past the first or last page.
+- Page contents now trail slightly behind the page while it moves and appear from behind its edge, which gives the swipe more depth.
+- Taps are only ignored while the page is still clearly moving. Once it is almost in place, taps and a new swipe work again.
+
 ## 1.2.9
 
 ### Changed
