@@ -8,6 +8,8 @@ Versions 1.0.4 and 1.2.6 were never published. Their changes are included in 1.0
 
 ### Added
 - App icons now appear one after another when the panel opens, each fading in while sliding a short distance from the panel edge.
+- The same effect plays when you swipe to another page: the items of the incoming page appear one by one from top to bottom, following your finger.
+- The app list and the shortcut list now have the system overscroll effect when you scroll past the end: a stretch on Android 12 and newer, a glow on older versions. Short lists that fit without scrolling stay still.
 
 ### Changed
 - The page dots now morph: the active dot stretches into a small capsule while the dot you leave shrinks back into a circle. The change follows your finger while you swipe.
