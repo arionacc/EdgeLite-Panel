@@ -4,6 +4,16 @@ All notable changes to EdgeLite Panel are listed here, newest first.
 
 Versions 1.0.4 and 1.2.6 were never published. Their changes are included in 1.0.5 and 1.2.7.
 
+## 1.3.1
+
+### Added
+- App icons now appear one after another when the panel opens, each fading in while sliding a short distance from the panel edge.
+
+### Changed
+- The page dots now morph: the active dot stretches into a small capsule while the dot you leave shrinks back into a circle. The change follows your finger while you swipe.
+- The page dots are slightly larger than before.
+- The panel preview in settings shows the new dots, with one dot per page.
+
 ## 1.3.0
 
 ### Changed
