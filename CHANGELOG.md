@@ -16,6 +16,7 @@ Versions 1.0.4 and 1.2.6 were never published. Their changes are included in 1.0
 - While you drag a slider or change a choice, the matching part of the panel preview is highlighted.
 - Buttons, segmented controls, cards, and text now share one set of sizes, corner radii, and spacing. Most borders were replaced by subtle surface colors and thin dividers.
 - Autostart uses a real switch instead of an On or Off pill.
+- The app lists in Edit (panel apps) and Choose recorder app now open right away. Before, the list was read when you tapped the button, which made the dialog appear late. It is now loaded in the background when settings opens and kept ready.
 - Secondary text is lighter for better contrast, and small text is slightly larger. Status pills now grow with the system font size instead of being fixed.
 
 ### Added

@@ -106,6 +106,9 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         refreshStatus()
+        // Daftar aplikasi dimuat lebih awal di latar supaya dialog Edit langsung terbuka.
+        AppRepo.invalidate()
+        AppRepo.load(this)
     }
 
     // ------------------------------------------------------------------ Helper tampilan
@@ -1132,7 +1135,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun pickRecorder(onDone: () -> Unit) {
-        val apps = AppRepo.launchable(this)
+        AppRepo.load(this) { apps ->
+            if (!isFinishing && !isDestroyed) showRecorderPicker(apps, onDone)
+        }
+    }
+
+    private fun showRecorderPicker(apps: List<AppItem>, onDone: () -> Unit) {
         val names = (listOf(getString(R.string.recorder_auto)) + apps.map { it.label }).toTypedArray()
         val checked = (apps.indexOfFirst { it.pkg == prefs.recorderPkg } + 1).coerceAtLeast(0)
 
@@ -1175,7 +1183,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun pickApps() {
-        val apps = AppRepo.launchable(this)
+        AppRepo.load(this) { apps ->
+            if (!isFinishing && !isDestroyed) showAppPicker(apps)
+        }
+    }
+
+    private fun showAppPicker(apps: List<AppItem>) {
         val current = prefs.pinned.toMutableList()
         val checked = BooleanArray(apps.size) { apps[it].pkg in current }
 
