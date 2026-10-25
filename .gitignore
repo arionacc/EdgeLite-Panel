@@ -1,0 +1,28 @@
+# Gradle
+.gradle/
+build/
+*/build/
+
+# Local configuration
+local.properties
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Keystore
+*.jks
+*.keystore
+
+# APK
+*.apk
+*.aab
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Kotlin
+*.class
