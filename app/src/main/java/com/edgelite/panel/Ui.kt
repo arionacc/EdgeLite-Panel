@@ -30,6 +30,9 @@ object Ui {
     /** Teks sekunder di atas [CONTROL]. Rasio kontras di atas 4,5:1. */
     val MUTED_HI = 0xFFA8A8A8.toInt()
 
+    /** Kartu di dalam dialog (Tutorial dan Tentang). Sedikit lebih terang dari latar dialog. */
+    val SHEET_CARD = 0xFF242424.toInt()
+
     // Jarak dan ukuran dalam dp. Semua kontrol yang bisa diketuk minimal 48 dp.
     const val PAGE_PAD_DP = 24
     const val SECTION_GAP_DP = 40

@@ -16,6 +16,7 @@ import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
 import android.widget.HorizontalScrollView
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -956,54 +957,217 @@ class MainActivity : AppCompatActivity() {
         }.show()
     }
 
+    // ------------------------------------------------------------------ Dialog Tutorial dan Tentang
+
+    /** Kartu untuk isi dialog, sedikit lebih terang dari latar dialog supaya terbaca sebagai satu kelompok. */
+    private fun sheetCard(radiusDp: Int = 20) = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL
+        background = bg(Ui.SHEET_CARD, radiusDp)
+        clipToOutline = true
+    }
+
+    /** Label kecil berbentuk kapsul, misalnya "Opsional". */
+    private fun chip(t: String) = TextView(this).apply {
+        text = t
+        textSize = Ui.TEXT_CAPTION
+        bold()
+        setTextColor(Ui.TEXT)
+        setPadding(dp(10), dp(3), dp(10), dp(3))
+        background = bg(Ui.CONTROL, capsule = true)
+    }
+
     private fun tutorialItem(box: LinearLayout, @StringRes title: Int, @StringRes body: Int, top: Int) {
         box.addTop(TextView(this).apply {
             text = getString(title)
-            textSize = 14f
+            textSize = Ui.TEXT_BODY
             bold()
             setTextColor(Ui.TEXT)
         }, top)
-        box.addTop(TextView(this).apply {
-            text = getString(body)
-            textSize = 13f
-            setLineSpacing(0f, 1.15f)
-            setTextColor(Ui.MUTED)
-        }, 4)
+        box.addTop(note(getString(body)), 4)
+    }
+
+    /** Satu langkah bernomor. Garis tipis di sisi kiri menyambungkan satu langkah ke langkah berikutnya. */
+    private fun stepRow(
+        number: Int,
+        @StringRes title: Int,
+        @StringRes body: Int,
+        last: Boolean,
+        optional: Boolean = false
+    ): View {
+        val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+
+        val rail = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
+        }
+        rail.addView(TextView(this).apply {
+            text = number.toString()
+            textSize = Ui.TEXT_SECONDARY
+            bold()
+            gravity = Gravity.CENTER
+            setTextColor(if (optional) Ui.TEXT else Ui.ON_LIGHT)
+            background = bg(if (optional) Ui.CONTROL else Ui.LIGHT, capsule = true)
+        }, LinearLayout.LayoutParams(dp(28), dp(28)))
+        if (!last) {
+            rail.addView(View(this).apply { setBackgroundColor(Ui.CONTROL) },
+                LinearLayout.LayoutParams(dp(2), 0, 1f).apply {
+                    topMargin = dp(6)
+                    bottomMargin = dp(6)
+                })
+        }
+        row.addView(rail, LinearLayout.LayoutParams(dp(28), MATCH))
+
+        val texts = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(0, dp(3), 0, if (last) 0 else dp(20))
+        }
+        val head = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+        head.addView(TextView(this).apply {
+            text = getString(title)
+            textSize = Ui.TEXT_CARD_TITLE
+            bold()
+            setTextColor(Ui.TEXT)
+        }, LinearLayout.LayoutParams(WRAP, WRAP, 1f))
+        if (optional) {
+            head.addView(chip(getString(R.string.tut_optional)),
+                LinearLayout.LayoutParams(WRAP, WRAP).apply { marginStart = dp(8) })
+        }
+        texts.addView(head, LinearLayout.LayoutParams(MATCH, WRAP))
+        texts.addView(note(getString(body)), LinearLayout.LayoutParams(MATCH, WRAP).apply { topMargin = dp(4) })
+        row.addView(texts, LinearLayout.LayoutParams(0, WRAP, 1f).apply { marginStart = dp(14) })
+        return row
+    }
+
+    /**
+     * Baris yang bisa dilipat di dalam [card]. Garis pemisah ditambahkan otomatis dari baris kedua.
+     * Isinya disembunyikan sampai judulnya diketuk, supaya tutorial tidak jadi dinding teks.
+     */
+    private fun addAccordion(card: LinearLayout, @StringRes title: Int, @StringRes body: Int, open: Boolean = false) {
+        if (card.childCount > 0) {
+            card.addView(View(this).apply { setBackgroundColor(Ui.OUTLINE) },
+                LinearLayout.LayoutParams(MATCH, dp(1)).apply {
+                    marginStart = dp(16)
+                    marginEnd = dp(16)
+                })
+        }
+        val head = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            minimumHeight = dp(Ui.CONTROL_HEIGHT_DP + 4)
+            setPadding(dp(16), dp(10), dp(10), dp(10))
+            background = rowRipple()
+            isClickable = true
+            asButton()
+        }
+        head.addView(TextView(this).apply {
+            text = getString(title)
+            textSize = Ui.TEXT_BODY
+            bold()
+            setTextColor(Ui.TEXT)
+        }, LinearLayout.LayoutParams(0, WRAP, 1f))
+        val chevron = ImageView(this).apply {
+            setImageResource(R.drawable.ic_expand)
+            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+        }
+        head.addView(chevron, LinearLayout.LayoutParams(dp(28), dp(28)).apply { marginStart = dp(8) })
+        card.addView(head, LinearLayout.LayoutParams(MATCH, WRAP))
+
+        val bodyView = note(getString(body)).apply { setPadding(dp(16), 0, dp(16), dp(16)) }
+        card.addView(bodyView, LinearLayout.LayoutParams(MATCH, WRAP))
+
+        fun setOpen(isOpen: Boolean, animate: Boolean) {
+            bodyView.visibility = if (isOpen) View.VISIBLE else View.GONE
+            val target = if (isOpen) 180f else 0f
+            if (animate) chevron.animate().rotation(target).setDuration(160).start()
+            else chevron.rotation = target
+            ViewCompat.setStateDescription(
+                head,
+                getString(if (isOpen) R.string.state_expanded else R.string.state_collapsed)
+            )
+        }
+        setOpen(open, false)
+        head.setOnClickListener { setOpen(bodyView.visibility != View.VISIBLE, true) }
+    }
+
+    /** Kartu penegasan privasi layanan aksesibilitas: tiga hal yang tidak dilakukan, lalu catatannya. */
+    private fun trustCard(): View {
+        val c = sheetCard().apply { setPadding(dp(16), dp(16), dp(16), dp(16)) }
+        c.addView(TextView(this).apply {
+            text = getString(R.string.tut_a11y_does_t)
+            textSize = Ui.TEXT_CARD_TITLE
+            bold()
+            setTextColor(Ui.TEXT)
+        })
+        for (res in listOf(R.string.tut_a11y_p1, R.string.tut_a11y_p2, R.string.tut_a11y_p3)) {
+            val line = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+            }
+            line.addView(View(this).apply { background = bg(Ui.LIGHT, capsule = true) },
+                LinearLayout.LayoutParams(dp(8), dp(8)))
+            line.addView(TextView(this).apply {
+                text = getString(res)
+                textSize = Ui.TEXT_BODY
+                setTextColor(Ui.TEXT)
+            }, LinearLayout.LayoutParams(0, WRAP, 1f).apply { marginStart = dp(12) })
+            c.addView(line, LinearLayout.LayoutParams(MATCH, WRAP).apply { topMargin = dp(10) })
+        }
+        c.addView(note(getString(R.string.tut_a11y_does_b)),
+            LinearLayout.LayoutParams(MATCH, WRAP).apply { topMargin = dp(14) })
+        return c
     }
 
     private fun showTutorial() {
         val box = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(24), dp(8), dp(24), dp(8))
+            setPadding(dp(24), dp(4), dp(24), dp(12))
         }
+        box.addTop(note(getString(R.string.tut_intro)), 0)
 
-        box.addTop(caps(getString(R.string.tut_sec_start)), 0)
-        tutorialItem(box, R.string.tut_start_1_t, R.string.tut_start_1_b, 12)
-        tutorialItem(box, R.string.tut_start_2_t, R.string.tut_start_2_b, 12)
-        tutorialItem(box, R.string.tut_start_3_t, R.string.tut_start_3_b, 12)
-        tutorialItem(box, R.string.tut_start_4_t, R.string.tut_start_4_b, 12)
+        // Memulai: empat langkah bernomor
+        box.addTop(caps(getString(R.string.tut_sec_start)), 26)
+        val steps = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        steps.addView(stepRow(1, R.string.tut_start_1_t, R.string.tut_start_1_b, last = false))
+        steps.addView(stepRow(2, R.string.tut_start_2_t, R.string.tut_start_2_b, last = false))
+        steps.addView(stepRow(3, R.string.tut_start_3_t, R.string.tut_start_3_b, last = false))
+        steps.addView(stepRow(4, R.string.tut_start_4_t, R.string.tut_start_4_b, last = true, optional = true))
+        box.addTop(steps, 14)
 
-        box.addTop(caps(getString(R.string.tut_sec_a11y)), 26)
+        // Layanan aksesibilitas
+        box.addTop(caps(getString(R.string.tut_sec_a11y)), 30)
         tutorialItem(box, R.string.tut_a11y_why_t, R.string.tut_a11y_why_b, 12)
-        tutorialItem(box, R.string.tut_a11y_does_t, R.string.tut_a11y_does_b, 14)
-        tutorialItem(box, R.string.tut_a11y_enable_t, R.string.tut_a11y_enable_b, 14)
-        tutorialItem(box, R.string.tut_a11y_disable_t, R.string.tut_a11y_disable_b, 14)
+        box.addTop(trustCard(), 16)
+        val a11y = sheetCard()
+        addAccordion(a11y, R.string.tut_a11y_enable_t, R.string.tut_a11y_enable_b, open = true)
+        addAccordion(a11y, R.string.tut_a11y_disable_t, R.string.tut_a11y_disable_b)
+        box.addTop(a11y, 12)
 
-        box.addTop(caps(getString(R.string.tut_sec_update)), 26)
-        tutorialItem(box, R.string.tut_update_keep_t, R.string.tut_update_keep_b, 12)
+        // Pembaruan dan jendela mengambang
+        box.addTop(caps(getString(R.string.tut_sec_update)), 30)
+        val update = sheetCard()
+        addAccordion(update, R.string.tut_update_keep_t, R.string.tut_update_keep_b)
+        box.addTop(update, 12)
 
-        box.addTop(caps(getString(R.string.tut_sec_freeform)), 26)
-        tutorialItem(box, R.string.tut_freeform_enable_t, R.string.tut_freeform_enable_b, 12)
+        box.addTop(caps(getString(R.string.tut_sec_freeform)), 30)
+        val freeform = sheetCard()
+        addAccordion(freeform, R.string.tut_freeform_enable_t, R.string.tut_freeform_enable_b)
+        box.addTop(freeform, 12)
 
-        box.addTop(caps(getString(R.string.tut_sec_trouble)), 26)
-        tutorialItem(box, R.string.tr_gray_t, R.string.tr_gray_b, 12)
-        tutorialItem(box, R.string.tr_reboot_t, R.string.tr_reboot_b, 14)
-        tutorialItem(box, R.string.tr_dies_t, R.string.tr_dies_b, 14)
-        tutorialItem(box, R.string.tr_fullscreen_t, R.string.tr_fullscreen_b, 14)
-        tutorialItem(box, R.string.tr_gesture_t, R.string.tr_gesture_b, 14)
-        tutorialItem(box, R.string.tr_apply_t, R.string.tr_apply_b, 14)
-        tutorialItem(box, R.string.tr_missing_t, R.string.tr_missing_b, 14)
-        tutorialItem(box, R.string.tr_nohandle_t, R.string.tr_nohandle_b, 14)
+        // Masalah dan solusi
+        box.addTop(caps(getString(R.string.tut_sec_trouble)), 30)
+        val trouble = sheetCard()
+        addAccordion(trouble, R.string.tr_gray_t, R.string.tr_gray_b)
+        addAccordion(trouble, R.string.tr_reboot_t, R.string.tr_reboot_b)
+        addAccordion(trouble, R.string.tr_dies_t, R.string.tr_dies_b)
+        addAccordion(trouble, R.string.tr_fullscreen_t, R.string.tr_fullscreen_b)
+        addAccordion(trouble, R.string.tr_gesture_t, R.string.tr_gesture_b)
+        addAccordion(trouble, R.string.tr_apply_t, R.string.tr_apply_b)
+        addAccordion(trouble, R.string.tr_missing_t, R.string.tr_missing_b)
+        addAccordion(trouble, R.string.tr_nohandle_t, R.string.tr_nohandle_b)
+        box.addTop(trouble, 12)
 
         MaterialAlertDialogBuilder(this)
             .setTitle(R.string.tut_title)
@@ -1012,20 +1176,44 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
-    private fun infoRow(label: String, value: String): View {
-        val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+    private fun infoRow(label: String, value: String): LinearLayout {
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            minimumHeight = dp(Ui.CONTROL_HEIGHT_DP)
+            setPadding(dp(16), dp(10), dp(16), dp(10))
+        }
         row.addView(TextView(this).apply {
             text = label
-            textSize = 13f
-            setTextColor(Ui.MUTED)
+            textSize = Ui.TEXT_BODY
+            setTextColor(Ui.MUTED_HI)
         }, LinearLayout.LayoutParams(0, WRAP, 1f))
         row.addView(TextView(this).apply {
             text = value
-            textSize = 13f
+            textSize = Ui.TEXT_BODY
             bold()
             setTextColor(Ui.TEXT)
         })
         return row
+    }
+
+    /** Menambah baris info ke [card]. Bila [onClick] diberikan, seluruh baris bisa diketuk. */
+    private fun addInfoRow(card: LinearLayout, label: String, value: String, onClick: (() -> Unit)? = null) {
+        if (card.childCount > 0) {
+            card.addView(View(this).apply { setBackgroundColor(Ui.OUTLINE) },
+                LinearLayout.LayoutParams(MATCH, dp(1)).apply {
+                    marginStart = dp(16)
+                    marginEnd = dp(16)
+                })
+        }
+        val row = infoRow(label, value)
+        if (onClick != null) {
+            row.background = rowRipple()
+            row.isClickable = true
+            row.setOnClickListener { onClick() }
+            row.asButton()
+        }
+        card.addView(row, LinearLayout.LayoutParams(MATCH, WRAP))
     }
 
     private fun doExport(uri: Uri) {
@@ -1070,21 +1258,65 @@ class MainActivity : AppCompatActivity() {
     private fun showAbout() {
         val box = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(24), dp(4), dp(24), dp(8))
+            setPadding(dp(24), dp(4), dp(24), dp(12))
         }
-        box.addTop(note(getString(R.string.about_summary)), 0)
-        box.addTop(infoRow(getString(R.string.about_author), "Arion"), 20)
-        box.addTop(infoRow(getString(R.string.about_version), appVersionName()), 10)
-        box.addTop(infoRow(getString(R.string.about_license), "GPL-3.0"), 10)
-        box.addTop(note(SOURCE_URL), 14)
-        box.addTop(pill(getString(R.string.about_open_source), false) { openSourceCode() }, 14)
+
+        // Kepala: ikon aplikasi, ringkasan, dan versi
+        val hero = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
+        }
+        val tile = FrameLayout(this).apply {
+            background = bg(Ui.BG, 24)
+            clipToOutline = true
+        }
+        tile.addView(ImageView(this).apply {
+            setImageResource(R.drawable.ic_launcher_fg)
+            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+        }, FrameLayout.LayoutParams(dp(120), dp(120), Gravity.CENTER))
+        hero.addView(tile, LinearLayout.LayoutParams(dp(84), dp(84)))
+        hero.addView(note(getString(R.string.about_summary)).apply { gravity = Gravity.CENTER },
+            LinearLayout.LayoutParams(MATCH, WRAP).apply { topMargin = dp(16) })
+        hero.addView(chip("v" + appVersionName()),
+            LinearLayout.LayoutParams(WRAP, WRAP).apply { topMargin = dp(12) })
+        box.addTop(hero, 4)
+
+        // Info singkat
+        val info = sheetCard()
+        addInfoRow(info, getString(R.string.about_author), "Arion")
+        addInfoRow(info, getString(R.string.about_license), "GPL-3.0")
+        addInfoRow(info, getString(R.string.about_version), appVersionName())
+        addInfoRow(info, getString(R.string.about_repo), SOURCE_URL.removePrefix("https://github.com/")) {
+            openSourceCode()
+        }
+        box.addTop(info, 22)
+
+        box.addTop(pill(getString(R.string.about_open_source), true) { openSourceCode() }, 16)
         box.addTop(pill(getString(R.string.about_view_license), false) { openLink("$SOURCE_URL/blob/main/LICENSE") }, 10)
-        box.addTop(caps(getString(R.string.about_disclaimer_title)), 22)
+
+        // Peringatan kompatibilitas dibuat menonjol karena memengaruhi apakah aplikasi bisa dipakai
+        val notice = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            background = bg(Ui.SHEET_CARD, 20)
+            clipToOutline = true
+        }
+        notice.addView(View(this).apply { setBackgroundColor(Ui.MUTED) }, LinearLayout.LayoutParams(dp(4), MATCH))
+        val noticeBody = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(16), dp(14), dp(16), dp(16))
+        }
+        noticeBody.addView(caps(getString(R.string.about_compat_title)))
+        noticeBody.addView(note(getString(R.string.about_compat_warning)),
+            LinearLayout.LayoutParams(MATCH, WRAP).apply { topMargin = dp(8) })
+        notice.addView(noticeBody, LinearLayout.LayoutParams(0, WRAP, 1f))
+        box.addTop(notice, 26)
+
+        box.addTop(caps(getString(R.string.about_disclaimer_title)), 26)
         box.addTop(
-            note(getString(R.string.about_disclaimer)), 8
-        )
-        box.addTop(
-            note(getString(R.string.about_compat_warning)), 14
+            note(getString(R.string.about_disclaimer)).apply {
+                textSize = Ui.TEXT_CAPTION
+                setTextColor(Ui.MUTED)
+            }, 8
         )
 
         MaterialAlertDialogBuilder(this)

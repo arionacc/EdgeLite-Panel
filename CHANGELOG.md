@@ -4,6 +4,16 @@ All notable changes to EdgeLite Panel are listed here, newest first.
 
 Versions 1.0.4 and 1.2.6 were never published. Their changes are included in 1.0.5 and 1.2.7.
 
+## 1.4.1
+
+### Changed
+- The Tutorial dialog has a new layout. Getting started is now four numbered steps joined by a line, and the battery step is tagged Optional.
+- The accessibility service section has a card that lists what the service does not do: it does not read the screen, does not receive events, and does not collect data.
+- How to turn it on or off, updating, floating windows, and every troubleshooting entry are now expandable rows. Only the title shows until you tap it, so the long list is easy to scan. How to turn it on starts open.
+- The About dialog has a new layout. It shows the app icon, the summary, and the version at the top, followed by one card with Author, License, Version, and Repository. Open source code is now the main button.
+- The compatibility warning in About has its own highlighted card, and the disclaimer is shown below it in smaller text.
+- Troubleshooting texts now use the current names from the settings screen: the Startup category, the Opening apps category, the Position and size category, and the Panel is active status.
+
 ## 1.4.0
 
 ### Changed

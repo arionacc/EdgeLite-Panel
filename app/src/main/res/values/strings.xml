@@ -138,31 +138,38 @@
     <string name="about_license">License</string>
     <string name="about_open_source">Open source code</string>
     <string name="about_view_license">View license</string>
+    <string name="about_repo">Repository</string>
     <string name="about_disclaimer_title">Disclaimer</string>
+    <string name="about_compat_title">Compatibility</string>
     <string name="about_disclaimer">EdgeLite is an independent project and is not affiliated with, endorsed by, or sponsored by Samsung Electronics. Samsung, One UI, and Edge Panel are trademarks of their respective owners, mentioned here only to describe compatibility.</string>
     <string name="about_compat_warning">EdgeLite is built and tested only on Samsung One UI. On other phones or Android skins it may not work as expected, or may not work at all. This includes the accessibility overlay, the floating window mode, and the lock screen behavior. Use it at your own discretion.</string>
 
     <!-- Tutorial -->
     <string name="tut_title">Tutorial</string>
+    <string name="tut_intro">Four steps and the panel is ready. Open the other sections whenever you need them.</string>
     <string name="tut_sec_start">Getting started</string>
     <string name="tut_sec_a11y">Accessibility service</string>
     <string name="tut_sec_update">Updating the app</string>
     <string name="tut_sec_freeform">Floating windows</string>
     <string name="tut_sec_trouble">Troubleshooting</string>
 
-    <string name="tut_start_1_t">1. Turn on the service</string>
+    <string name="tut_start_1_t">Turn on the service</string>
     <string name="tut_start_1_b">Tap Enable panel. Accessibility settings will open. Choose Installed apps, tap EdgeLite Panel, then turn it on. Samsung shows a standard warning for every accessibility service. This service does not read your screen.</string>
-    <string name="tut_start_2_t">2. Choose apps</string>
+    <string name="tut_start_2_t">Choose apps</string>
     <string name="tut_start_2_b">Tap Choose apps, tick the apps you want in the panel, then tap Save.</string>
-    <string name="tut_start_3_t">3. Open the panel</string>
+    <string name="tut_start_3_t">Open the panel</string>
     <string name="tut_start_3_b">Swipe the handle on the screen edge inward, or tap it. Tap an icon to open that app.</string>
-    <string name="tut_start_4_t">4. Optional, protect it from battery saving</string>
+    <string name="tut_start_4_t">Protect it from battery saving</string>
     <string name="tut_start_4_b">Tap the Ignore battery optimization row until its status shows Active.</string>
+    <string name="tut_optional">Optional</string>
 
     <string name="tut_a11y_why_t">Why it is needed</string>
     <string name="tut_a11y_why_b">Android only lets a regular app show a handle over other apps through a foreground service with a notification. With an accessibility service, the handle and panel appear without a notification and do not show up in Check background activity, just like Samsung\'s built-in features.</string>
     <string name="tut_a11y_does_t">What it does and does not do</string>
-    <string name="tut_a11y_does_b">EdgeLite only draws the handle and the panel. The service does not read the screen, does not receive any events, and does not collect data. The warning shown when you turn it on is the standard Android warning for all accessibility services.</string>
+    <string name="tut_a11y_p1">Does not read your screen</string>
+    <string name="tut_a11y_p2">Does not receive any events</string>
+    <string name="tut_a11y_p3">Does not collect any data</string>
+    <string name="tut_a11y_does_b">EdgeLite only draws the handle and the panel. The warning shown when you turn it on is the standard Android warning for all accessibility services.</string>
     <string name="tut_a11y_enable_t">How to turn it on</string>
     <string name="tut_a11y_enable_b">Open Settings, Accessibility, Installed apps, tap EdgeLite Panel, switch it on, then tap Allow. Shortcut: tap the Accessibility service row on the EdgeLite home screen, or the Enable panel button. Menu names may differ slightly between One UI versions.</string>
     <string name="tut_a11y_disable_t">How to turn it off</string>
@@ -177,13 +184,13 @@
     <string name="tr_gray_t">The accessibility service switch is greyed out and cannot be turned on</string>
     <string name="tr_gray_b">Android 13 and above restricts apps installed from an APK file. Open Settings, Apps, EdgeLite Panel, tap the three dots at the top right, choose Allow restricted settings, then try turning it on again. If that menu is not there yet, tap the service switch once, go back, and check again.</string>
     <string name="tr_reboot_t">The panel does not start after a restart</string>
-    <string name="tr_reboot_b">Make sure the EdgeLite Panel service is still on in Accessibility, Autostart in the General category is on, and the PANEL label says ACTIVE before the phone restarts. The panel appears after the phone finishes booting and is unlocked. If you turned the panel off with the Disable button or the tile before restarting, it correctly stays off.</string>
+    <string name="tr_reboot_b">Make sure the EdgeLite Panel service is still on in Accessibility, Autostart in the Startup category is on, and the status card says Panel is active before the phone restarts. The panel appears after the phone finishes booting and is unlocked. If you turned the panel off with the Disable button or the tile before restarting, it correctly stays off.</string>
     <string name="tr_dies_t">The accessibility service turns itself off</string>
     <string name="tr_dies_b">Do not use Force stop in app info, because Android then turns the service off. Turn on Ignore battery optimization. On Samsung, open Settings, Battery, Background usage limits, then remove EdgeLite from Sleeping apps and add it to Never sleeping apps. Menu names may differ between One UI versions.</string>
     <string name="tr_fullscreen_t">Apps open fullscreen instead of in a window</string>
-    <string name="tr_fullscreen_b">Check that Default open mode in the General category is Window. Make sure both freeform options in Developer options are on. Some apps do not support resizing and ignore the window size, which is not an EdgeLite fault.</string>
+    <string name="tr_fullscreen_b">Check that Default open mode in the Opening apps category is Window. Make sure both freeform options in Developer options are on. Some apps do not support resizing and ignore the window size, which is not an EdgeLite fault.</string>
     <string name="tr_gesture_t">The handle conflicts with the back gesture</string>
-    <string name="tr_gesture_b">Move the handle position up or down in the Side and handle category, or move it to the other side. You can also lower the back gesture sensitivity in Samsung navigation settings if available.</string>
+    <string name="tr_gesture_b">Move the handle position up or down in the Position and size category, or move it to the other side. You can also lower the back gesture sensitivity in Samsung navigation settings if available.</string>
     <string name="tr_apply_t">Settings do not change right away</string>
     <string name="tr_apply_b">Sliders apply their value when you lift your finger, and the change shows after the panel is reopened. If it still looks the same, tap Disable and then Enable panel.</string>
     <string name="tr_missing_t">An app does not appear in the panel</string>
