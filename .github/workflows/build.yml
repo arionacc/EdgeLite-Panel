@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: write
+  discussions: write
 
 jobs:
   build:
@@ -52,3 +53,4 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: app/build/outputs/apk/debug/app-debug.apk
+          discussion_category_name: Announcements
