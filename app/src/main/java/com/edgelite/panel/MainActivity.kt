@@ -1,15 +1,19 @@
 package com.edgelite.panel
 
 import android.content.ActivityNotFoundException
+import android.appwidget.AppWidgetManager
+import android.appwidget.AppWidgetProviderInfo
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.RippleDrawable
 import android.net.Uri
 import android.os.Bundle
+import android.os.Process
 import android.os.PowerManager
 import android.provider.Settings
 import android.util.TypedValue
@@ -43,6 +47,19 @@ private const val CAPSULE_RADIUS = 1000f
 
 private const val SOURCE_URL = "https://github.com/arionacc/EdgeLite-Panel"
 
+private const val REQ_WIDGET_BIND = 7301
+private const val REQ_WIDGET_CONFIG = 7302
+
+/** Satu penyedia widget di daftar pilihan. Ukuran dalam sel kisi. */
+private class WidgetEntry(
+    val info: AppWidgetProviderInfo,
+    val app: String,
+    val label: String,
+    val icon: Drawable?,
+    val cols: Int,
+    val rows: Int
+)
+
 class MainActivity : AppCompatActivity() {
 
     private class Row(val view: View, val status: TextView)
@@ -67,6 +84,13 @@ class MainActivity : AppCompatActivity() {
     private lateinit var pinnedCount: TextView
     private lateinit var pinnedRow: LinearLayout
     private lateinit var pinnedHint: TextView
+
+    // Widget
+    private lateinit var widgetSummary: TextView
+    private lateinit var widgetManage: View
+
+    /** ID widget yang sedang ditambahkan, menunggu izin atau layar konfigurasinya selesai. */
+    private var pendingWidgetId = -1
 
     // Bagian yang dibangun ulang saat orientasi yang diedit berganti
     private lateinit var layoutContainer: LinearLayout
@@ -117,6 +141,8 @@ class MainActivity : AppCompatActivity() {
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
 
     private fun toast(msg: String) = Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+
+    private fun toast(@StringRes res: Int) = toast(getString(res))
 
     private fun TextView.bold() = setTypeface(typeface, Typeface.BOLD)
 
@@ -684,6 +710,16 @@ class MainActivity : AppCompatActivity() {
             b.addTop(pill(getString(R.string.recorder_pick), false) { pickRecorder { refreshRecorder() } }, 20)
         }, Ui.CARD_GAP_DP)
 
+        add(category(getString(R.string.cat_widgets), getString(R.string.cat_widgets_sum)) { b ->
+            widgetSummary = note("")
+            widgetManage = pill(getString(R.string.widgets_manage), false) { manageWidgets() }
+            b.addTop(note(getString(R.string.widgets_note)), 10)
+            b.addTop(widgetSummary, 14)
+            b.addTop(pill(getString(R.string.widgets_add), false) { pickWidget() }, 20)
+            b.addTop(widgetManage, 10)
+            refreshWidgets()
+        }, Ui.CARD_GAP_DP)
+
         // Sistem
         add(caps(getString(R.string.section_system)), Ui.SECTION_GAP_DP)
         add(category(getString(R.string.cat_startup), getString(R.string.cat_startup_sum)) { b ->
@@ -1156,6 +1192,11 @@ class MainActivity : AppCompatActivity() {
         addAccordion(freeform, R.string.tut_freeform_enable_t, R.string.tut_freeform_enable_b)
         box.addTop(freeform, 12)
 
+        box.addTop(caps(getString(R.string.tut_sec_widgets)), 30)
+        val widgets = sheetCard()
+        addAccordion(widgets, R.string.tut_widgets_t, R.string.tut_widgets_b)
+        box.addTop(widgets, 12)
+
         // Masalah dan solusi
         box.addTop(caps(getString(R.string.tut_sec_trouble)), 30)
         val trouble = sheetCard()
@@ -1167,6 +1208,7 @@ class MainActivity : AppCompatActivity() {
         addAccordion(trouble, R.string.tr_apply_t, R.string.tr_apply_b)
         addAccordion(trouble, R.string.tr_missing_t, R.string.tr_missing_b)
         addAccordion(trouble, R.string.tr_nohandle_t, R.string.tr_nohandle_b)
+        addAccordion(trouble, R.string.tr_widget_t, R.string.tr_widget_b)
         box.addTop(trouble, 12)
 
         MaterialAlertDialogBuilder(this)
@@ -1408,6 +1450,211 @@ class MainActivity : AppCompatActivity() {
                 onDone()
                 refreshPermissions()
                 refreshPanelPreview()
+                EdgeAccessibilityService.refresh(this)
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    // ------------------------------------------------------------------ Widget
+
+    /** Memperbarui ringkasan kartu Widget. ID yang sudah tidak dikenal sistem dibuang dari pengaturan. */
+    private fun refreshWidgets() {
+        val saved = prefs.widgets
+        val valid = WidgetHost.validIds(this, saved)
+        if (valid.size != saved.size) prefs.widgets = valid
+        val pm = packageManager
+        val names = valid.mapNotNull { id ->
+            WidgetHost.info(this, id)?.let { runCatching { it.loadLabel(pm).toString() }.getOrNull() }
+        }
+        widgetSummary.text =
+            if (names.isEmpty()) getString(R.string.widgets_none) else names.joinToString(", ")
+        widgetManage.visibility = if (names.isEmpty()) View.GONE else View.VISIBLE
+    }
+
+    private fun appLabelOf(pkg: String): String =
+        runCatching { packageManager.getApplicationLabel(packageManager.getApplicationInfo(pkg, 0)).toString() }
+            .getOrDefault(pkg)
+
+    /** Membaca daftar penyedia widget di thread latar (lambat), lalu menampilkan dialog pilihan. */
+    private fun pickWidget() {
+        val app = applicationContext
+        Thread {
+            val pm = app.packageManager
+            val dpi = app.resources.displayMetrics.densityDpi
+            val density = app.resources.displayMetrics.density
+            val entries = runCatching {
+                AppWidgetManager.getInstance(app).installedProviders
+                    .filter { it.profile == Process.myUserHandle() }
+                    .map { info ->
+                        WidgetEntry(
+                            info,
+                            appLabelOf(info.provider.packageName),
+                            info.loadLabel(pm).toString(),
+                            runCatching { info.loadIcon(app, dpi) }.getOrNull(),
+                            WidgetHost.cells(info.minWidth, density),
+                            WidgetHost.cells(info.minHeight, density)
+                        )
+                    }
+                    .sortedWith(compareBy({ it.app.lowercase() }, { it.label.lowercase() }))
+            }.getOrDefault(emptyList())
+            runOnUiThread { if (!isFinishing && !isDestroyed) showWidgetPicker(entries) }
+        }.start()
+    }
+
+    private fun showWidgetPicker(entries: List<WidgetEntry>) {
+        if (entries.isEmpty()) {
+            toast(R.string.widgets_pick_empty)
+            return
+        }
+        val box = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(24), dp(4), dp(24), dp(12))
+        }
+        var dlg: android.app.Dialog? = null
+        var lastApp: String? = null
+        var card: LinearLayout? = null
+        for (e in entries) {
+            if (e.app != lastApp) {
+                box.addTop(caps(e.app), if (lastApp == null) 8 else 22)
+                val c = sheetCard()
+                card = c
+                box.addTop(c, 10)
+                lastApp = e.app
+            }
+            addWidgetRow(card!!, e) {
+                dlg?.dismiss()
+                addWidget(e.info)
+            }
+        }
+        dlg = MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.widgets_pick_title)
+            .setView(ScrollView(this).apply { addView(box) })
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    private fun addWidgetRow(card: LinearLayout, e: WidgetEntry, onClick: () -> Unit) {
+        if (card.childCount > 0) {
+            card.addView(View(this).apply { setBackgroundColor(Ui.OUTLINE) },
+                LinearLayout.LayoutParams(MATCH, dp(1)).apply {
+                    marginStart = dp(16)
+                    marginEnd = dp(16)
+                })
+        }
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            minimumHeight = dp(Ui.CONTROL_HEIGHT_DP + 8)
+            setPadding(dp(16), dp(10), dp(16), dp(10))
+            background = rowRipple()
+            isClickable = true
+            asButton()
+        }
+        row.addView(ImageView(this).apply { setImageDrawable(e.icon) }, LinearLayout.LayoutParams(dp(36), dp(36)))
+        val texts = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        texts.addView(TextView(this).apply {
+            text = e.label
+            textSize = Ui.TEXT_BODY
+            bold()
+            setTextColor(Ui.TEXT)
+        })
+        texts.addView(TextView(this).apply {
+            text = getString(R.string.widget_size, e.cols, e.rows)
+            textSize = Ui.TEXT_CAPTION
+            setTextColor(Ui.MUTED_HI)
+        })
+        row.addView(texts, LinearLayout.LayoutParams(0, WRAP, 1f).apply { marginStart = dp(14) })
+        row.setOnClickListener { onClick() }
+        card.addView(row, LinearLayout.LayoutParams(MATCH, WRAP))
+    }
+
+    /**
+     * Menambah widget. Aplikasi biasa tidak boleh mengikat widget sendiri, jadi pertama kali Android
+     * menampilkan dialog izin. Setelah itu, bila widget punya layar konfigurasi, layar itu dibuka.
+     */
+    @Suppress("DEPRECATION")
+    private fun addWidget(info: AppWidgetProviderInfo) {
+        val host = WidgetHost.get(this)
+        val id = runCatching { host.allocateAppWidgetId() }.getOrNull()
+        if (id == null) {
+            toast(R.string.widgets_add_failed)
+            return
+        }
+        pendingWidgetId = id
+        val bound = runCatching {
+            AppWidgetManager.getInstance(this).bindAppWidgetIdIfAllowed(id, info.provider)
+        }.getOrDefault(false)
+        if (bound) {
+            configureOrFinish(id)
+            return
+        }
+        val ask = Intent(AppWidgetManager.ACTION_APPWIDGET_BIND)
+            .putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id)
+            .putExtra(AppWidgetManager.EXTRA_APPWIDGET_PROVIDER, info.provider)
+        runCatching { startActivityForResult(ask, REQ_WIDGET_BIND) }.onFailure { cancelPendingWidget(true) }
+    }
+
+    private fun configureOrFinish(id: Int) {
+        val info = WidgetHost.info(this, id)
+        if (info?.configure == null) {
+            finishAddWidget(id)
+            return
+        }
+        @Suppress("DEPRECATION")
+        val started = runCatching {
+            WidgetHost.get(this).startAppWidgetConfigureActivityForResult(this, id, 0, REQ_WIDGET_CONFIG, null)
+        }.isSuccess
+        if (!started) cancelPendingWidget(true)
+    }
+
+    private fun finishAddWidget(id: Int) {
+        prefs.widgets = prefs.widgets + id
+        pendingWidgetId = -1
+        refreshWidgets()
+        EdgeAccessibilityService.refresh(this)
+    }
+
+    /** Membatalkan penambahan: ID yang sudah dipesan dilepas lagi supaya tidak menumpuk di sistem. */
+    private fun cancelPendingWidget(showError: Boolean) {
+        val id = pendingWidgetId
+        pendingWidgetId = -1
+        if (id != -1) runCatching { WidgetHost.get(this).deleteAppWidgetId(id) }
+        if (showError) toast(R.string.widgets_add_failed)
+    }
+
+    @Deprecated("Dipakai karena layar konfigurasi widget hanya melapor lewat onActivityResult.")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode != REQ_WIDGET_BIND && requestCode != REQ_WIDGET_CONFIG) return
+        val id = data?.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, -1)?.takeIf { it != -1 } ?: pendingWidgetId
+        if (id == -1 || id != pendingWidgetId) return
+        if (resultCode != RESULT_OK) {
+            cancelPendingWidget(false)
+            return
+        }
+        if (requestCode == REQ_WIDGET_BIND) configureOrFinish(id) else finishAddWidget(id)
+    }
+
+    /** Daftar widget di panel. Hilangkan centang lalu simpan untuk menghapusnya. */
+    private fun manageWidgets() {
+        val ids = WidgetHost.validIds(this, prefs.widgets)
+        if (ids.isEmpty()) return
+        val pm = packageManager
+        val names = ids.map { id ->
+            WidgetHost.info(this, id)?.let {
+                "${runCatching { it.loadLabel(pm).toString() }.getOrDefault("")} (${appLabelOf(it.provider.packageName)})"
+            } ?: id.toString()
+        }
+        val keep = BooleanArray(ids.size) { true }
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.widgets_manage_title)
+            .setMultiChoiceItems(names.toTypedArray(), keep) { _, i, checked -> keep[i] = checked }
+            .setPositiveButton(R.string.save) { _, _ ->
+                val host = WidgetHost.get(this)
+                ids.forEachIndexed { i, id -> if (!keep[i]) runCatching { host.deleteAppWidgetId(id) } }
+                prefs.widgets = ids.filterIndexed { i, _ -> keep[i] }
+                refreshWidgets()
                 EdgeAccessibilityService.refresh(this)
             }
             .setNegativeButton(R.string.cancel, null)

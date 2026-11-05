@@ -10,6 +10,10 @@
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
         </intent>
+        <!-- Supaya penyedia widget terlihat di Android 11 ke atas dan bisa dipilih di daftar widget. -->
+        <intent>
+            <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+        </intent>
     </queries>
 
     <application
