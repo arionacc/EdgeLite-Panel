@@ -4,6 +4,19 @@ All notable changes to EdgeLite Panel are listed here, newest first.
 
 Versions 1.0.4 and 1.2.6 were never published. Their changes are included in 1.0.5 and 1.2.7.
 
+## 1.5.0
+
+### Added
+- Widgets. Open Widgets in settings, tap Add widget, and pick one from the list, which is grouped by app and shows each widget's size. Android asks for permission the first time, and widgets that need setup open their own setup screen.
+- Added widgets get the last page of the panel, shown as a list of icons so the panel keeps its size. Tapping one opens the widget in a card beside the panel, on the same side the panel is on. Tap outside the card to close it.
+- The card is sized from the widget's own minimum size, and widgets that can be resized get more room so lists are readable. Widgets are drawn in dark mode to match the card.
+- Tapping something in a widget that opens an app launches it and closes the panel.
+- Remove widgets from settings by unchecking them.
+- The Tutorial has a Using widgets entry and a troubleshooting entry for widgets that look empty.
+
+### Notes
+- Widgets are tied to this phone, so they are not part of exported settings and are skipped on import.
+
 ## 1.4.1
 
 ### Changed

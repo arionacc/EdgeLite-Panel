@@ -47,6 +47,14 @@ class Prefs(context: Context) {
         get() = QuickAction.fromCodes(sp.getString("quick_actions", "") ?: "").filter { it.supported }
         set(v) { sp.edit().putString("quick_actions", v.joinToString(",") { it.code }).apply() }
 
+    /**
+     * ID widget yang dipasang di panel, urutannya sesuai penambahan. ID hanya berlaku di perangkat ini,
+     * jadi sengaja tidak ikut diekspor dan tidak diterima saat impor.
+     */
+    var widgets: List<Int>
+        get() = (sp.getString("widgets", "") ?: "").split(",").mapNotNull { it.trim().toIntOrNull() }
+        set(v) { sp.edit().putString("widgets", v.joinToString(",")).apply() }
+
     /** Aplikasi perekam layar pilihan pengguna. Kosong berarti dicari otomatis. */
     var recorderPkg: String
         get() = sp.getString("recorder_pkg", "") ?: ""

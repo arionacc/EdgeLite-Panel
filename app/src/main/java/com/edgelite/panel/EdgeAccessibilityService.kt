@@ -3,6 +3,7 @@ package com.edgelite.panel
 import android.accessibilityservice.AccessibilityService
 import android.annotation.SuppressLint
 import android.app.KeyguardManager
+import android.appwidget.AppWidgetProviderInfo
 import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
@@ -18,6 +19,7 @@ import android.graphics.drawable.GradientDrawable
 import android.media.AudioManager
 import android.net.Uri
 import android.os.Build
+import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
@@ -127,6 +129,10 @@ class EdgeAccessibilityService : AccessibilityService() {
     private var panelRoot: FrameLayout? = null
     private var panelCard: View? = null
     private var panelLp: WindowManager.LayoutParams? = null
+
+    // Widget: kartu yang sedang terbuka di samping panel, dan apakah tuan rumah sedang mendengarkan pembaruan.
+    private var widgetCard: View? = null
+    private var widgetListening = false
     private var volumeStepMode = false
     private var volumeTarget = -1
     private var volumeWarned = false
@@ -426,12 +432,14 @@ class EdgeAccessibilityService : AccessibilityService() {
             addView(list)
         }
         val actions = prefs.quickActions
-        if (actions.isEmpty()) {
+        val widgetIds = WidgetHost.validIds(this, prefs.widgets)
+        val hasPager = actions.isNotEmpty() || widgetIds.isNotEmpty()
+        if (!hasPager) {
             card.addView(scroll, LinearLayout.LayoutParams(MATCH, 0, 1f))
         } else {
             // Halaman 1: aplikasi. Halaman 2: pintasan akses cepat (bila ada). Halaman 3: slider volume
-            // dan kecerahan (bila ada), dipisah supaya halaman pintasan tidak gendut. Geser ke samping
-            // untuk berpindah. Ukuran panel tetap sama.
+            // dan kecerahan (bila ada), dipisah supaya halaman pintasan tidak gendut. Halaman terakhir:
+            // widget (bila ada). Geser ke samping untuk berpindah. Ukuran panel tetap sama.
             toggleIcons.clear()
             val sliders = actions.filter { it.kind == QuickKind.SLIDER }
             val shortcuts = actions.filter { it.kind != QuickKind.SLIDER }
@@ -452,6 +460,7 @@ class EdgeAccessibilityService : AccessibilityService() {
             // Halaman slider memenuhi tinggi halaman seperti halaman lain, jadi ukuran panel tidak berubah.
             // Slider memanjang mengikuti sisa ruang di antara kontrol atas dan keterangan persen di bawah.
             if (sliders.isNotEmpty()) pager.addPage(sliderPage(sliders, textColor))
+            if (widgetIds.isNotEmpty()) pager.addPage(widgetPage(widgetIds, textColor, iconDp, showLabels))
             // Penanda halaman ada di bawah, di antara halaman dan tombol pengaturan, jadi tidak menutupi ikon.
             val dots = PageDotsView(ui, pager.childCount)
             pager.onScroll = { dots.setPosition(it) }
@@ -462,7 +471,7 @@ class EdgeAccessibilityService : AccessibilityService() {
         // Tombol pengaturan
         val gear = ImageView(ui).apply {
             setImageResource(R.drawable.ic_tune)
-            setPadding(dp(14), if (actions.isEmpty()) dp(10) else dp(4), dp(14), dp(6))
+            setPadding(dp(14), if (!hasPager) dp(10) else dp(4), dp(14), dp(6))
             setOnClickListener {
                 this@EdgeAccessibilityService.startActivity(
                     Intent(this@EdgeAccessibilityService, MainActivity::class.java)
@@ -475,7 +484,8 @@ class EdgeAccessibilityService : AccessibilityService() {
 
         val root = FrameLayout(ui)
         root.setBackgroundColor(0x66000000)
-        root.setOnClickListener { closePanel() }
+        // Ketukan di luar kartu widget menutup kartunya dulu, baru ketukan berikutnya menutup panel.
+        root.setOnClickListener { if (widgetCard != null) hideWidgetCard() else closePanel() }
         val cardLp = FrameLayout.LayoutParams(
             cardW, cardH,
             (if (right) Gravity.END else Gravity.START) or Gravity.CENTER_VERTICAL
@@ -524,6 +534,148 @@ class EdgeAccessibilityService : AccessibilityService() {
                 .setInterpolator(DecelerateInterpolator(2f))
                 .start()
         }
+    }
+
+    // ------------------------------------------------------------------ Widget
+
+    /**
+     * Halaman widget. Panel terlalu sempit untuk widget sungguhan, jadi halaman ini hanya berisi
+     * daftar ikon widget dengan ukuran dan susunan yang sama dengan item aplikasi. Mengetuk satu
+     * widget membuka kartu di samping panel yang menampung widget itu.
+     */
+    private fun widgetPage(ids: List<Int>, textColor: Int, iconDp: Int, showLabels: Boolean): View {
+        val col = LinearLayout(ui).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
+        }
+        ids.forEach { id -> widgetTile(id, textColor, iconDp, showLabels)?.let { col.addView(it) } }
+        return ScrollView(ui).apply {
+            isVerticalScrollBarEnabled = false
+            overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS
+            addView(col)
+        }
+    }
+
+    private fun widgetTile(id: Int, textColor: Int, iconDp: Int, showLabels: Boolean): View? {
+        val info = WidgetHost.info(this, id) ?: return null
+        val pm = packageManager
+        val name = runCatching { info.loadLabel(pm).toString() }.getOrDefault("")
+        val drawable = runCatching { info.loadIcon(this, resources.displayMetrics.densityDpi) }.getOrNull()
+            ?: pm.defaultActivityIcon
+
+        val item = FlatLinearLayout(ui).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
+            setPadding(0, dp(6), 0, dp(6))
+        }
+        val tv = TypedValue()
+        if (ui.theme.resolveAttribute(android.R.attr.selectableItemBackground, tv, true)) {
+            item.setBackgroundResource(tv.resourceId)
+        }
+        item.addView(ImageView(ui).apply { setImageDrawable(drawable) }, LinearLayout.LayoutParams(dp(iconDp), dp(iconDp)))
+        if (showLabels) {
+            item.addView(TextView(ui).apply {
+                text = name
+                textSize = 10f
+                maxLines = 2
+                ellipsize = TextUtils.TruncateAt.END
+                gravity = Gravity.CENTER
+                setTextColor(textColor)
+            }, LinearLayout.LayoutParams(MATCH, WRAP).apply { topMargin = dp(2) })
+        }
+        item.contentDescription = name
+        item.setOnClickListener { showWidgetCard(id) }
+        return item
+    }
+
+    /**
+     * Membuka widget di kartu melayang di samping panel. Ukurannya mengikuti ukuran minimum widget;
+     * widget yang bisa diubah ukurannya diberi ruang lebih supaya daftar di dalamnya terbaca.
+     * Latar kartu selalu gelap, jadi widget dirender dalam mode malam agar teksnya tetap terbaca.
+     */
+    private fun showWidgetCard(id: Int) {
+        val root = panelRoot ?: return
+        val info = WidgetHost.info(this, id) ?: return
+        hideWidgetCard(animated = false)
+
+        val (sw, sh) = screenSize()
+        val o = orient()
+        val right = prefs.getSide(o) == EdgeSide.RIGHT
+        val gap = dp(10)
+        val panelW = dp(prefs.getPanelW(o))
+        val maxW = max(dp(140), min(sw - panelW - gap - dp(12), dp(360)))
+        val maxH = (sh * 0.85f).toInt()
+        val growW = (info.resizeMode and AppWidgetProviderInfo.RESIZE_HORIZONTAL) != 0
+        val growH = (info.resizeMode and AppWidgetProviderInfo.RESIZE_VERTICAL) != 0
+        val w = max(min(dp(160), maxW), min(if (growW) max(info.minWidth, dp(260)) else info.minWidth, maxW))
+        val h = max(min(dp(110), maxH), min(if (growH) max(info.minHeight, dp(260)) else info.minHeight, maxH))
+
+        val night = createConfigurationContext(Configuration(resources.configuration).apply {
+            uiMode = (uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or Configuration.UI_MODE_NIGHT_YES
+        })
+        val wctx = WidgetContext(night) { ok ->
+            if (ok) mainHandler.post { closePanel() } else toast(R.string.widget_open_failed)
+        }
+
+        startWidgetListening()
+        val view = runCatching { WidgetHost.get(this).createView(wctx, id, info) }.getOrNull()
+        if (view == null) {
+            toast(R.string.widget_open_failed)
+            return
+        }
+        val d = resources.displayMetrics.density
+        val wDp = (w / d).toInt()
+        val hDp = (h / d).toInt()
+        view.updateAppWidgetSize(Bundle(), wDp, hDp, wDp, hDp)
+
+        val card = FrameLayout(ui).apply {
+            isClickable = true
+            clipToOutline = true
+            elevation = dp(10).toFloat()
+            background = GradientDrawable().apply {
+                setColor(Ui.PANEL)
+                setStroke(dp(1), Ui.OUTLINE)
+                cornerRadius = dp(24).toFloat()
+            }
+        }
+        card.addView(view, FrameLayout.LayoutParams(MATCH, MATCH))
+
+        val lp = FrameLayout.LayoutParams(
+            w, h,
+            (if (right) Gravity.END else Gravity.START) or Gravity.CENTER_VERTICAL
+        )
+        if (right) lp.marginEnd = panelW + gap else lp.marginStart = panelW + gap
+        root.addView(card, lp)
+        widgetCard = card
+
+        card.alpha = 0f
+        card.translationX = (if (right) 1 else -1) * dp(20).toFloat()
+        card.animate().alpha(1f).translationX(0f).setDuration(180)
+            .setInterpolator(DecelerateInterpolator()).start()
+    }
+
+    private fun hideWidgetCard(animated: Boolean = true) {
+        val v = widgetCard ?: return
+        widgetCard = null
+        if (!animated || panelRoot == null) {
+            (v.parent as? ViewGroup)?.removeView(v)
+            return
+        }
+        v.animate().alpha(0f).setDuration(120)
+            .withEndAction { (v.parent as? ViewGroup)?.removeView(v) }
+            .start()
+    }
+
+    /** Tuan rumah hanya mendengarkan pembaruan selama panel terbuka dan ada kartu widget. */
+    private fun startWidgetListening() {
+        if (widgetListening) return
+        widgetListening = runCatching { WidgetHost.get(this).startListening() }.isSuccess
+    }
+
+    private fun stopWidgetListening() {
+        if (!widgetListening) return
+        widgetListening = false
+        runCatching { WidgetHost.get(this).stopListening() }
     }
 
     /** Satu aksi akses cepat di halaman kedua, dengan ukuran dan susunan yang sama dengan item aplikasi. */
@@ -1052,6 +1204,8 @@ class EdgeAccessibilityService : AccessibilityService() {
         val root = panelRoot ?: return
         val card = panelCard
         toggleIcons.clear()
+        widgetCard = null
+        stopWidgetListening()
         panelRoot = null
         panelCard = null
         panelLp = null
