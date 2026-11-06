@@ -1582,8 +1582,12 @@ class MainActivity : AppCompatActivity() {
             return
         }
         pendingWidgetId = id
+        val dens = resources.displayMetrics.density
+        val opts = WidgetHost.hostOptions(
+            maxOf(1, (info.minWidth / dens).toInt()), maxOf(1, (info.minHeight / dens).toInt())
+        )
         val bound = runCatching {
-            AppWidgetManager.getInstance(this).bindAppWidgetIdIfAllowed(id, info.provider)
+            AppWidgetManager.getInstance(this).bindAppWidgetIdIfAllowed(id, info.provider, opts)
         }.getOrDefault(false)
         if (bound) {
             configureOrFinish(id)
@@ -1592,6 +1596,7 @@ class MainActivity : AppCompatActivity() {
         val ask = Intent(AppWidgetManager.ACTION_APPWIDGET_BIND)
             .putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id)
             .putExtra(AppWidgetManager.EXTRA_APPWIDGET_PROVIDER, info.provider)
+            .putExtra(AppWidgetManager.EXTRA_APPWIDGET_OPTIONS, opts)
         runCatching { startActivityForResult(ask, REQ_WIDGET_BIND) }.onFailure { cancelPendingWidget(true) }
     }
 

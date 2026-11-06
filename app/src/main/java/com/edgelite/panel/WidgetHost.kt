@@ -11,6 +11,7 @@ import android.content.IntentSender
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
+import android.util.SizeF
 
 /**
  * Tuan rumah widget Android untuk EdgeLite. Satu instance dipakai bersama oleh halaman pengaturan
@@ -35,6 +36,30 @@ object WidgetHost {
 
     /** Hanya ID yang masih dikenal sistem. ID bisa hilang setelah pulihkan cadangan atau widget dihapus. */
     fun validIds(ctx: Context, ids: List<Int>): List<Int> = ids.filter { info(ctx, it) != null }
+
+    /**
+     * Opsi tuan rumah untuk widget: kategori layar utama dan ukuran (dp). Banyak widget bawaan Samsung membaca
+     * kategori dan ukuran ini dari opsi widget sebelum menggambar, dan menampilkan "Tidak dapat menampilkan
+     * konten" bila kosong. Dipakai saat widget diikat dan setiap kartu dibuka.
+     */
+    fun hostOptions(wDp: Int, hDp: Int): Bundle = Bundle().apply {
+        putInt(AppWidgetManager.OPTION_APPWIDGET_HOST_CATEGORY, AppWidgetProviderInfo.WIDGET_CATEGORY_HOME_SCREEN)
+        putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, wDp)
+        putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, wDp)
+        putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, hDp)
+        putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, hDp)
+    }
+
+    /** Memberi tahu penyedia ukuran kartu. Android 12 ke atas juga mengirim daftar ukuran untuk tata letak responsif. */
+    @Suppress("DEPRECATION")
+    fun applySize(view: android.appwidget.AppWidgetHostView, wDp: Int, hDp: Int) {
+        val opts = hostOptions(wDp, hDp)
+        if (Build.VERSION.SDK_INT >= 31) {
+            view.updateAppWidgetSize(opts, listOf(SizeF(wDp.toFloat(), hDp.toFloat())))
+        } else {
+            view.updateAppWidgetSize(opts, wDp, hDp, wDp, hDp)
+        }
+    }
 
     /** Ukuran widget dalam sel kisi (satu sel sekitar 70 dp), seperti yang ditampilkan peluncur. */
     fun cells(px: Int, density: Float): Int = maxOf(1, ((px / density).toInt() + 30) / 70)

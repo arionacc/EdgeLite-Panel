@@ -239,11 +239,12 @@
     <string name="widgets_pick_title">Pilih widget</string>
     <string name="widgets_pick_empty">Tidak ada widget yang tersedia di ponsel ini</string>
     <string name="widgets_add_failed">Widget ini tidak bisa ditambahkan</string>
+    <string name="widget_bg_toggle">Ganti latar kartu</string>
     <string name="widget_open_failed">Tidak bisa dibuka dari widget ini</string>
     <string name="widget_size">%1$d × %2$d</string>
     <string name="tut_sec_widgets">Widget</string>
     <string name="tut_widgets_t">Memakai widget</string>
     <string name="tut_widgets_b">Buka Pengaturan, Widget, ketuk Tambah widget, lalu pilih satu. Android meminta izin saat pertama kali. Di panel, geser ke halaman terakhir dan ketuk widget untuk membukanya dalam kartu di samping panel. Ketuk di luar kartu untuk menutupnya. Mengetuk bagian widget yang membuka aplikasi juga menutup panel.</string>
     <string name="tr_widget_t">Widget tampak kosong</string>
-    <string name="tr_widget_b">Buka aplikasi pemilik widget itu sekali supaya datanya dimuat, lalu buka kartunya lagi. Bila tetap kosong, hapus widget lalu tambahkan lagi.</string>
+    <string name="tr_widget_b">Bila kartu terlihat kosong atau hitam, ketuk lingkaran kecil di pojok kartu untuk menukar latar gelap dan terang, karena sebagian widget memakai teks gelap. Bila belum berubah, buka aplikasi pemilik widget itu sekali supaya datanya dimuat, lalu buka kartunya lagi. Bila tetap kosong, hapus widget lalu tambahkan lagi.</string>
 </resources>
