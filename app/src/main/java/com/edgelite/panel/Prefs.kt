@@ -12,6 +12,15 @@ enum class Orient(val key: String) { PORTRAIT("p"), LANDSCAPE("l") }
 fun orientOf(width: Int, height: Int): Orient =
     if (width > height) Orient.LANDSCAPE else Orient.PORTRAIT
 
+/** Kode halaman panel menurut urutan bawaan: aplikasi, alat, volume dan kecerahan, widget. */
+val PAGE_CODES = listOf("a", "t", "v", "w")
+
+/** Rentang ukuran kartu widget (dp). */
+const val WIDGET_W_MIN = 120
+const val WIDGET_W_MAX = 600
+const val WIDGET_H_MIN = 80
+const val WIDGET_H_MAX = 700
+
 class Prefs(context: Context) {
 
     private val sp = context.applicationContext
@@ -54,6 +63,56 @@ class Prefs(context: Context) {
     var widgets: List<Int>
         get() = (sp.getString("widgets", "") ?: "").split(",").mapNotNull { it.trim().toIntOrNull() }
         set(v) { sp.edit().putString("widgets", v.joinToString(",")).apply() }
+
+    /**
+     * Menutup panel setelah sesuatu di widget diketuk. Bawaan mati supaya tombol seperti maju 10 detik
+     * bisa diketuk berulang tanpa panel menutup. Dinyalakan bila ingin widget yang membuka aplikasi
+     * ikut menutup panel.
+     */
+    var widgetCloseOnTap: Boolean
+        get() = sp.getBoolean("widget_close_tap", false)
+        set(v) { sp.edit().putBoolean("widget_close_tap", v).apply() }
+
+    /**
+     * Ukuran kartu per widget (dp), format `id:lebar:tinggi` dipisah koma. Widget tanpa entri memakai ukuran
+     * otomatis dari penyedianya. Seperti [widgets], terikat pada perangkat ini dan tidak ikut diekspor.
+     */
+    private val widgetSizes: Map<Int, Pair<Int, Int>>
+        get() = (sp.getString("widget_sizes", "") ?: "").split(",").mapNotNull { e ->
+            val f = e.split(":")
+            val id = f.getOrNull(0)?.toIntOrNull() ?: return@mapNotNull null
+            val w = f.getOrNull(1)?.toIntOrNull() ?: return@mapNotNull null
+            val h = f.getOrNull(2)?.toIntOrNull() ?: return@mapNotNull null
+            id to (w.coerceIn(WIDGET_W_MIN, WIDGET_W_MAX) to h.coerceIn(WIDGET_H_MIN, WIDGET_H_MAX))
+        }.toMap()
+
+    /** Ukuran kartu pilihan pengguna (lebar, tinggi dalam dp), atau null bila otomatis. */
+    fun getWidgetSize(id: Int): Pair<Int, Int>? = widgetSizes[id]
+
+    /** Mengatur ukuran kartu widget. [size] null mengembalikan ke otomatis. */
+    fun setWidgetSize(id: Int, size: Pair<Int, Int>?) {
+        val m = widgetSizes.toMutableMap()
+        if (size == null) m.remove(id) else m[id] = size
+        sp.edit().putString("widget_sizes", m.entries.joinToString(",") { "${it.key}:${it.value.first}:${it.value.second}" }).apply()
+    }
+
+    /** Membuang ukuran milik widget yang sudah tidak ada di [keep]. */
+    fun pruneWidgetSizes(keep: List<Int>) {
+        val m = widgetSizes.filterKeys { it in keep }
+        sp.edit().putString("widget_sizes", m.entries.joinToString(",") { "${it.key}:${it.value.first}:${it.value.second}" }).apply()
+    }
+
+    /**
+     * Urutan halaman panel. Kode: a aplikasi, t alat (pintasan akses cepat), v volume dan kecerahan,
+     * w widget. Kode yang hilang atau tak dikenal dibuang, kode yang belum disebut ditambahkan di belakang
+     * menurut urutan bawaan. Halaman yang kosong dilewati saat panel dibangun.
+     */
+    var pageOrder: List<String>
+        get() {
+            val saved = (sp.getString("page_order", "") ?: "").split(",").filter { it in PAGE_CODES }.distinct()
+            return saved + PAGE_CODES.filter { it !in saved }
+        }
+        set(v) { sp.edit().putString("page_order", v.joinToString(",")).apply() }
 
     /** Aplikasi perekam layar pilihan pengguna. Kosong berarti dicari otomatis. */
     var recorderPkg: String
@@ -181,6 +240,8 @@ class Prefs(context: Context) {
         d.put("icon_dp", iconSizeDp)
         d.put("labels", showLabels)
         d.put("win_fit", winFit)
+        d.put("widget_close_tap", widgetCloseOnTap)
+        d.put("page_order", pageOrder.joinToString(","))
         d.put("quick_actions", sp.getString("quick_actions", "") ?: "")
         d.put("app_shapes", sp.getString("app_shapes", "") ?: "")
         d.put("recorder_pkg", recorderPkg)
@@ -232,10 +293,11 @@ class Prefs(context: Context) {
         val perOrient = key.endsWith("_p") || key.endsWith("_l")
         if (!perOrient) {
             return when (key) {
-                "enabled", "autostart", "labels", "win_fit" -> v as? Boolean
+                "enabled", "autostart", "labels", "win_fit", "widget_close_tap" -> v as? Boolean
                 "mode" -> (v as? String)?.takeIf { it == "WINDOW" || it == "FULL" }
                 "pinned" -> (v as? String)?.takeIf { Regex("[A-Za-z0-9_.,]*").matches(it) }
                 "quick_actions" -> (v as? String)?.takeIf { Regex("([a-z](,[a-z])*)?").matches(it) }
+                "page_order" -> (v as? String)?.takeIf { Regex("[atvw](,[atvw]){0,3}").matches(it) }
                 "app_shapes" -> (v as? String)?.takeIf {
                     it.isEmpty() || Regex("[A-Za-z0-9_.]+=[PLF](,[A-Za-z0-9_.]+=[PLF])*").matches(it)
                 }

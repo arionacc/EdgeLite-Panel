@@ -229,9 +229,18 @@
         <item quantity="other">%1$d aplikasi</item>
     </plurals>
 
+    <string name="cat_page_order">Urutan halaman</string>
+    <string name="cat_page_order_sum">Atur urutan halaman yang digeser di panel</string>
+    <string name="page_order_note">Halaman pertama adalah yang terbuka saat panel dibuka. Halaman yang kosong, seperti Widget sebelum ada widget, dilewati.</string>
+    <string name="page_apps">Aplikasi</string>
+    <string name="page_tools">Alat</string>
+    <string name="page_sliders">Volume dan kecerahan</string>
+    <string name="page_widgets">Widget</string>
+    <string name="page_move_up">Naikkan %1$s</string>
+    <string name="page_move_down">Turunkan %1$s</string>
     <string name="cat_widgets">Widget</string>
     <string name="cat_widgets_sum">Tampilkan widget Android dari panel</string>
-    <string name="widgets_note">Widget muncul di halaman terakhir panel. Ketuk salah satunya untuk membukanya dalam kartu di samping panel. Ketuk di luar kartu untuk menutupnya.</string>
+    <string name="widgets_note">Widget muncul di halaman sendiri di panel. Ketuk salah satunya untuk membukanya dalam kartu di samping panel. Ketuk di luar kartu untuk menutupnya.</string>
     <string name="widgets_none">Belum ada widget</string>
     <string name="widgets_add">Tambah widget</string>
     <string name="widgets_manage">Hapus widget</string>
@@ -241,9 +250,20 @@
     <string name="widgets_add_failed">Widget ini tidak bisa ditambahkan</string>
     <string name="widget_open_failed">Tidak bisa dibuka dari widget ini</string>
     <string name="widget_size">%1$d × %2$d</string>
+    <string name="widgets_size">Ukuran kartu widget</string>
+    <string name="widgets_size_title">Pilih widget yang diatur ukurannya</string>
+    <string name="widget_size_dialog_title">Ukuran kartu: %1$s</string>
+    <string name="widget_size_note">Mengatur ukuran kartu yang terbuka di samping panel. Ukuran dalam dp dan dibatasi oleh ruang layar yang tersedia.</string>
+    <string name="widget_size_w">Lebar</string>
+    <string name="widget_size_h">Tinggi</string>
+    <string name="widget_size_auto">Otomatis</string>
+    <string name="widget_size_dp">%1$d × %2$d dp</string>
+    <string name="widget_size_reset">Pakai otomatis</string>
+    <string name="widgets_close_tap">Tutup panel setelah widget disentuh</string>
+    <string name="widgets_close_tap_desc">Bila mati, panel tetap terbuka sehingga tombol seperti maju 10 detik bisa diketuk berulang. Nyalakan bila ingin widget yang membuka aplikasi ikut menutup panel.</string>
     <string name="tut_sec_widgets">Widget</string>
     <string name="tut_widgets_t">Memakai widget</string>
-    <string name="tut_widgets_b">Buka Pengaturan, Widget, ketuk Tambah widget, lalu pilih satu. Android meminta izin saat pertama kali. Di panel, geser ke halaman terakhir dan ketuk widget untuk membukanya dalam kartu di samping panel. Ketuk di luar kartu untuk menutupnya. Mengetuk bagian widget yang membuka aplikasi juga menutup panel.</string>
+    <string name="tut_widgets_b">Buka Pengaturan, Widget, ketuk Tambah widget, lalu pilih satu. Android meminta izin saat pertama kali. Di panel, geser ke halaman Widget dan ketuk widget untuk membukanya dalam kartu di samping panel. Ketuk di luar kartu untuk menutupnya. Panel tetap terbuka saat bagian widget diketuk, jadi tombol bisa diketuk berulang. Untuk mengubah ukuran kartu, buka Widget, ketuk Ukuran kartu widget, lalu pilih widget. Agar panel menutup setelah diketuk, nyalakan Tutup panel setelah widget disentuh.</string>
     <string name="tr_widget_t">Widget tampak kosong</string>
     <string name="tr_widget_b">Buka aplikasi pemilik widget itu sekali supaya datanya dimuat, lalu buka kartunya lagi. Bila tetap kosong, hapus widget lalu tambahkan lagi.</string>
 </resources>
