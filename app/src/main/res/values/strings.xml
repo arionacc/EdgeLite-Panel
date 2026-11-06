@@ -248,12 +248,11 @@
     <string name="widgets_pick_title">Choose a widget</string>
     <string name="widgets_pick_empty">No widgets are available on this phone</string>
     <string name="widgets_add_failed">Could not add this widget</string>
-    <string name="widget_bg_toggle">Switch card background</string>
     <string name="widget_open_failed">Could not open from this widget</string>
     <string name="widget_size">%1$d × %2$d</string>
     <string name="tut_sec_widgets">Widgets</string>
     <string name="tut_widgets_t">Using widgets</string>
     <string name="tut_widgets_b">Open Settings, Widgets, tap Add widget, and choose one. Android asks for permission the first time. In the panel, swipe to the last page and tap a widget to open it in a card beside the panel. Tap outside the card to close it. Tapping something in a widget that opens an app also closes the panel.</string>
     <string name="tr_widget_t">A widget looks empty</string>
-    <string name="tr_widget_b">If the card looks empty or black, tap the small circle in its top corner to switch between a dark and a light background, since some widgets use dark text. Otherwise open the app that owns the widget once so it can load its data, then open the card again. If it stays empty, remove the widget and add it again.</string>
+    <string name="tr_widget_b">Open the app that owns the widget once so it can load its data, then open the card again. If it stays empty, remove the widget and add it again.</string>
 </resources>

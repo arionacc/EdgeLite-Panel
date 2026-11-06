@@ -55,20 +55,6 @@ class Prefs(context: Context) {
         get() = (sp.getString("widgets", "") ?: "").split(",").mapNotNull { it.trim().toIntOrNull() }
         set(v) { sp.edit().putString("widgets", v.joinToString(",")).apply() }
 
-    /**
-     * Widget yang kartunya memakai latar terang. Beberapa widget (contoh: widget bawaan Samsung) tidak punya
-     * latar sendiri dan memilih warna teks mengikuti wallpaper, jadi teks gelapnya tak terbaca di kartu gelap.
-     * ID hanya berlaku di perangkat ini, jadi tidak ikut ekspor.
-     */
-    fun isWidgetLight(id: Int): Boolean =
-        (sp.getString("widgets_light", "") ?: "").split(",").any { it.trim().toIntOrNull() == id }
-
-    fun setWidgetLight(id: Int, light: Boolean) {
-        val cur = (sp.getString("widgets_light", "") ?: "").split(",").mapNotNull { it.trim().toIntOrNull() }.filter { it != id }
-        val next = if (light) cur + id else cur
-        sp.edit().putString("widgets_light", next.joinToString(",")).apply()
-    }
-
     /** Aplikasi perekam layar pilihan pengguna. Kosong berarti dicari otomatis. */
     var recorderPkg: String
         get() = sp.getString("recorder_pkg", "") ?: ""
