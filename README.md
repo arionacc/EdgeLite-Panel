@@ -25,7 +25,7 @@ A thin handle sits on the edge of your screen. Swipe it inward (or tap it) and a
 - Export and import settings as a JSON file
 - English and Indonesian (follows the phone language)
 - Quick access page: swipe the panel sideways for a second page with system shortcuts (notifications, quick settings, recent apps, home, back, screenshot, lock screen, power menu, volume, etc)
-- Widgets: add Android widgets (calendar, tasks, weather, and more). They get the last page of the panel, and tapping one opens it in a card beside the panel
+- Widgets: add Android widgets (calendar, tasks, weather, and more). They get their own page in the panel, and tapping one opens it in a card beside the panel
 
 ## Screenshot
 <table align="center">
@@ -66,7 +66,7 @@ Menu names can differ slightly between One UI versions.
 
 - **Open the panel:** swipe the handle inward or tap it
 - **Quick access:** in settings, open Quick access and tap Choose shortcuts. Then swipe the panel sideways to see them. The panel size does not change.
-- **Widgets:** in settings, open Widgets and tap Add widget. Android asks for permission the first time. Then swipe the panel to its last page and tap a widget to open it in a card beside the panel. Tap outside the card to close it.
+- **Widgets:** in settings, open Widgets and tap Add widget. Android asks for permission the first time. Then swipe the panel to the Widgets page and tap a widget to open it in a card beside the panel. Tap outside the card to close it. The panel stays open when you tap inside a widget. To resize a card, tap Widget card size.
 - **Open an app:** tap its icon
 - **Close the panel:** tap the dimmed area outside it
 - **Turn off:** use **Disable** or the Quick Settings tile (hides the handle only). To stop the service completely, switch it off in Accessibility.
@@ -79,7 +79,8 @@ Menu names can differ slightly between One UI versions.
 | Panel | Position and size (per orientation) | Left or right side, panel height (30 to 95 %) and width (64 to 140 dp), handle height (60 to 240 dp) and position (10 to 90 %) |
 | Apps and actions | Opening apps | Default open mode (Window or Fullscreen), floating window width and height (30 to 100 %, per orientation) with a live preview, app fit (Auto or Exact) |
 | Apps and actions | Quick access | Shortcuts, sliders, and the screen recorder app |
-| Apps and actions | Widgets | Add and remove widgets shown in the panel |
+| Apps and actions | Page order | Order of the panel pages (Apps, Tools, Volume and brightness, Widgets) |
+| Apps and actions | Widgets | Add and remove widgets shown in the panel, card size per widget, close panel after tapping a widget |
 | System | Startup | Autostart |
 | System | Export and import | Save and restore all settings as a JSON file |
 

@@ -88,6 +88,7 @@ class MainActivity : AppCompatActivity() {
     // Widget
     private lateinit var widgetSummary: TextView
     private lateinit var widgetManage: View
+    private lateinit var widgetSize: View
 
     /** ID widget yang sedang ditambahkan, menunggu izin atau layar konfigurasinya selesai. */
     private var pendingWidgetId = -1
@@ -710,13 +711,42 @@ class MainActivity : AppCompatActivity() {
             b.addTop(pill(getString(R.string.recorder_pick), false) { pickRecorder { refreshRecorder() } }, 20)
         }, Ui.CARD_GAP_DP)
 
+        add(category(getString(R.string.cat_page_order), getString(R.string.cat_page_order_sum)) { b ->
+            val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+            fun render() {
+                list.removeAllViews()
+                val order = prefs.pageOrder
+                order.forEachIndexed { i, code ->
+                    list.addView(pageOrderRow(code, i, order.size) { dir ->
+                        val next = order.toMutableList()
+                        next[i] = next[i + dir].also { next[i + dir] = next[i] }
+                        prefs.pageOrder = next
+                        EdgeAccessibilityService.refresh(this)
+                        render()
+                    })
+                }
+            }
+            b.addTop(note(getString(R.string.page_order_note)), 10)
+            b.addTop(list, 14)
+            render()
+        }, Ui.CARD_GAP_DP)
+
         add(category(getString(R.string.cat_widgets), getString(R.string.cat_widgets_sum)) { b ->
             widgetSummary = note("")
             widgetManage = pill(getString(R.string.widgets_manage), false) { manageWidgets() }
             b.addTop(note(getString(R.string.widgets_note)), 10)
             b.addTop(widgetSummary, 14)
             b.addTop(pill(getString(R.string.widgets_add), false) { pickWidget() }, 20)
+            widgetSize = pill(getString(R.string.widgets_size), false) { pickWidgetForSize() }
+            b.addTop(widgetSize, 10)
             b.addTop(widgetManage, 10)
+            b.addTop(
+                switchRow(
+                    getString(R.string.widgets_close_tap), getString(R.string.widgets_close_tap_desc),
+                    prefs.widgetCloseOnTap
+                ) { prefs.widgetCloseOnTap = it },
+                20
+            )
             refreshWidgets()
         }, Ui.CARD_GAP_DP)
 
@@ -1458,6 +1488,54 @@ class MainActivity : AppCompatActivity() {
 
     // ------------------------------------------------------------------ Widget
 
+    /** Nama halaman panel menurut kodenya (lihat [PAGE_CODES]). */
+    private fun pageName(code: String): String = getString(
+        when (code) {
+            "a" -> R.string.page_apps
+            "t" -> R.string.page_tools
+            "v" -> R.string.page_sliders
+            else -> R.string.page_widgets
+        }
+    )
+
+    /** Satu baris di Urutan halaman: nomor, nama, dan tombol naik atau turun. [onMove] menerima -1 atau 1. */
+    private fun pageOrderRow(code: String, index: Int, count: Int, onMove: (Int) -> Unit): View {
+        val name = pageName(code)
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            minimumHeight = dp(Ui.CONTROL_HEIGHT_DP)
+        }
+        row.addView(TextView(this).apply {
+            text = "${index + 1}"
+            textSize = Ui.TEXT_BODY
+            setTextColor(Ui.MUTED_HI)
+        }, LinearLayout.LayoutParams(dp(28), WRAP))
+        row.addView(TextView(this).apply {
+            text = name
+            textSize = Ui.TEXT_BODY
+            bold()
+            setTextColor(Ui.TEXT)
+        }, LinearLayout.LayoutParams(0, WRAP, 1f))
+        fun arrow(res: Int, desc: String, enabled: Boolean, dir: Int) = ImageView(this).apply {
+            setImageResource(res)
+            setColorFilter(Ui.TEXT)
+            setPadding(dp(12), dp(12), dp(12), dp(12))
+            contentDescription = desc
+            alpha = if (enabled) 1f else 0.3f
+            isEnabled = enabled
+            if (enabled) {
+                background = rowRipple()
+                setOnClickListener { onMove(dir) }
+            }
+        }
+        row.addView(arrow(R.drawable.ic_qa_arrow_up, getString(R.string.page_move_up, name), index > 0, -1),
+            LinearLayout.LayoutParams(dp(Ui.CONTROL_HEIGHT_DP), dp(Ui.CONTROL_HEIGHT_DP)))
+        row.addView(arrow(R.drawable.ic_qa_arrow_down, getString(R.string.page_move_down, name), index < count - 1, 1),
+            LinearLayout.LayoutParams(dp(Ui.CONTROL_HEIGHT_DP), dp(Ui.CONTROL_HEIGHT_DP)))
+        return row
+    }
+
     /** Memperbarui ringkasan kartu Widget. ID yang sudah tidak dikenal sistem dibuang dari pengaturan. */
     private fun refreshWidgets() {
         val saved = prefs.widgets
@@ -1470,6 +1548,57 @@ class MainActivity : AppCompatActivity() {
         widgetSummary.text =
             if (names.isEmpty()) getString(R.string.widgets_none) else names.joinToString(", ")
         widgetManage.visibility = if (names.isEmpty()) View.GONE else View.VISIBLE
+        widgetSize.visibility = widgetManage.visibility
+        prefs.pruneWidgetSizes(valid)
+    }
+
+    /** Memilih widget yang ukuran kartunya mau diatur. Tiap baris menampilkan ukuran saat ini. */
+    private fun pickWidgetForSize() {
+        val ids = WidgetHost.validIds(this, prefs.widgets)
+        if (ids.isEmpty()) return
+        val pm = packageManager
+        val names = ids.map { id ->
+            val label = WidgetHost.info(this, id)?.let { runCatching { it.loadLabel(pm).toString() }.getOrNull() } ?: id.toString()
+            val size = prefs.getWidgetSize(id)
+                ?.let { getString(R.string.widget_size_dp, it.first, it.second) }
+                ?: getString(R.string.widget_size_auto)
+            "$label ($size)"
+        }
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.widgets_size_title)
+            .setItems(names.toTypedArray()) { _, i -> showWidgetSizeDialog(ids[i]) }
+            .setNegativeButton(R.string.close, null)
+            .show()
+    }
+
+    /**
+     * Mengatur lebar dan tinggi kartu untuk satu widget (dp). Nilai awal slider adalah ukuran pilihan saat
+     * ini, atau perkiraan ukuran otomatis. Tombol Otomatis menghapus pilihan. Ukuran dijepit ke ruang layar
+     * yang tersedia saat kartu dibuka, jadi nilai besar aman di layar kecil.
+     */
+    private fun showWidgetSizeDialog(id: Int) {
+        val info = WidgetHost.info(this, id) ?: return
+        val label = runCatching { info.loadLabel(packageManager).toString() }.getOrDefault("")
+        val d = resources.displayMetrics.density
+        val saved = prefs.getWidgetSize(id)
+        var w = (saved?.first ?: (info.minWidth / d).toInt().coerceAtLeast(260)).coerceIn(WIDGET_W_MIN, WIDGET_W_MAX)
+        var h = (saved?.second ?: (info.minHeight / d).toInt().coerceAtLeast(200)).coerceIn(WIDGET_H_MIN, WIDGET_H_MAX)
+
+        val box = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(24), dp(8), dp(24), dp(4))
+        }
+        box.addView(note(getString(R.string.widget_size_note)))
+        box.addTop(slider(getString(R.string.widget_size_w), WIDGET_W_MIN.toFloat(), WIDGET_W_MAX.toFloat(), w.toFloat(), " dp") { w = it }, 20)
+        box.addTop(slider(getString(R.string.widget_size_h), WIDGET_H_MIN.toFloat(), WIDGET_H_MAX.toFloat(), h.toFloat(), " dp") { h = it }, 20)
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle(getString(R.string.widget_size_dialog_title, label))
+            .setView(box)
+            .setPositiveButton(R.string.save) { _, _ -> prefs.setWidgetSize(id, w to h) }
+            .setNeutralButton(R.string.widget_size_reset) { _, _ -> prefs.setWidgetSize(id, null) }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
     }
 
     private fun appLabelOf(pkg: String): String =
@@ -1659,6 +1788,7 @@ class MainActivity : AppCompatActivity() {
                 val host = WidgetHost.get(this)
                 ids.forEachIndexed { i, id -> if (!keep[i]) runCatching { host.deleteAppWidgetId(id) } }
                 prefs.widgets = ids.filterIndexed { i, _ -> keep[i] }
+                prefs.pruneWidgetSizes(prefs.widgets)
                 refreshWidgets()
                 EdgeAccessibilityService.refresh(this)
             }

@@ -445,23 +445,30 @@ class EdgeAccessibilityService : AccessibilityService() {
             val sliders = actions.filter { it.kind == QuickKind.SLIDER }
             val shortcuts = actions.filter { it.kind != QuickKind.SLIDER }
             val pager = PanelPager(ui)
-            pager.addPage(scroll)
-            if (shortcuts.isNotEmpty()) {
-                val quickList = LinearLayout(ui).apply {
-                    orientation = LinearLayout.VERTICAL
-                    gravity = Gravity.CENTER_HORIZONTAL
+            // Urutan halaman mengikuti pengaturan Urutan halaman. Halaman yang kosong dilewati, dan halaman
+            // pertama menurut urutan itulah yang terbuka saat panel dibuka.
+            prefs.pageOrder.forEach { code ->
+                when (code) {
+                    "a" -> pager.addPage(scroll)
+                    "t" -> if (shortcuts.isNotEmpty()) {
+                        val quickList = LinearLayout(ui).apply {
+                            orientation = LinearLayout.VERTICAL
+                            gravity = Gravity.CENTER_HORIZONTAL
+                        }
+                        shortcuts.forEach { quickList.addView(quickItem(it, textColor, iconDp, showLabels)) }
+                        pager.addPage(ScrollView(ui).apply {
+                            isVerticalScrollBarEnabled = false
+                            overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS
+                            addView(quickList)
+                        })
+                    }
+                    // Halaman slider memenuhi tinggi halaman seperti halaman lain, jadi ukuran panel tidak berubah.
+                    // Slider memanjang mengikuti sisa ruang di antara kontrol atas dan keterangan persen di bawah.
+                    "v" -> if (sliders.isNotEmpty()) pager.addPage(sliderPage(sliders, textColor))
+                    "w" -> if (widgetIds.isNotEmpty()) pager.addPage(widgetPage(widgetIds, textColor, iconDp, showLabels))
                 }
-                shortcuts.forEach { quickList.addView(quickItem(it, textColor, iconDp, showLabels)) }
-                pager.addPage(ScrollView(ui).apply {
-                    isVerticalScrollBarEnabled = false
-                    overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS
-                    addView(quickList)
-                })
             }
-            // Halaman slider memenuhi tinggi halaman seperti halaman lain, jadi ukuran panel tidak berubah.
-            // Slider memanjang mengikuti sisa ruang di antara kontrol atas dan keterangan persen di bawah.
-            if (sliders.isNotEmpty()) pager.addPage(sliderPage(sliders, textColor))
-            if (widgetIds.isNotEmpty()) pager.addPage(widgetPage(widgetIds, textColor, iconDp, showLabels))
+
             // Penanda halaman ada di bawah, di antara halaman dan tombol pengaturan, jadi tidak menutupi ikon.
             val dots = PageDotsView(ui, pager.childCount)
             pager.onScroll = { dots.setPosition(it) }
@@ -590,8 +597,9 @@ class EdgeAccessibilityService : AccessibilityService() {
     }
 
     /**
-     * Membuka widget di kartu melayang di samping panel. Ukurannya mengikuti ukuran minimum widget;
-     * widget yang bisa diubah ukurannya diberi ruang lebih supaya daftar di dalamnya terbaca.
+     * Membuka widget di kartu melayang di samping panel. Ukurannya mengikuti ukuran minimum widget
+     * (widget yang bisa diubah ukurannya diberi ruang lebih supaya daftar di dalamnya terbaca), kecuali
+     * pengguna sudah mengatur ukuran kartu widget itu di pengaturan.
      * Latar kartu selalu gelap, jadi widget dirender dalam mode malam agar teksnya tetap terbaca.
      */
     private fun showWidgetCard(id: Int) {
@@ -610,18 +618,23 @@ class EdgeAccessibilityService : AccessibilityService() {
         // Lebar yang diminta widget. Widget lebar (misalnya bawaan Samsung) menampilkan pesan galat bila diberi
         // jendela di bawah ukuran minimumnya. Bila tidak muat di samping panel, kartu dipusatkan di layar dan
         // menutupi panel (panel tetap di belakang, ketukan di luar kartu menutupnya).
-        val wantW = if (growW) max(info.minWidth, dp(260)) else info.minWidth
+        // Ukuran pilihan pengguna (pengaturan Widget) menggantikan ukuran otomatis dari penyedia widget.
+        val custom = prefs.getWidgetSize(id)
+        val wantW = if (custom != null) dp(custom.first) else if (growW) max(info.minWidth, dp(260)) else info.minWidth
+        val wantH = if (custom != null) dp(custom.second) else if (growH) max(info.minHeight, dp(260)) else info.minHeight
         val beside = sw - panelW - gap - dp(12)
         val overlay = wantW > beside
         val maxW = if (overlay) sw - dp(24) else max(dp(140), min(beside, max(dp(360), wantW)))
-        val w = max(min(dp(160), maxW), min(wantW, maxW))
-        val h = max(min(dp(110), maxH), min(if (growH) max(info.minHeight, dp(260)) else info.minHeight, maxH))
+        val w = if (custom != null) min(wantW, maxW) else max(min(dp(160), maxW), min(wantW, maxW))
+        val h = if (custom != null) min(wantH, maxH) else max(min(dp(110), maxH), min(wantH, maxH))
 
         val night = createConfigurationContext(Configuration(resources.configuration).apply {
             uiMode = (uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or Configuration.UI_MODE_NIGHT_YES
         })
         val onLaunched: (Boolean) -> Unit = { ok ->
-            if (ok) mainHandler.post { closePanel() } else toast(R.string.widget_open_failed)
+            // Panel tetap terbuka kecuali pengguna memintanya menutup, supaya tombol widget bisa diketuk berulang.
+            if (!ok) toast(R.string.widget_open_failed)
+            else if (prefs.widgetCloseOnTap) mainHandler.post { closePanel() }
         }
         val wctx = WidgetContext(night, onLaunched)
 

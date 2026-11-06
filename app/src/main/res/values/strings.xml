@@ -238,9 +238,18 @@
         <item quantity="other">%1$d apps</item>
     </plurals>
 
+    <string name="cat_page_order">Page order</string>
+    <string name="cat_page_order_sum">Arrange the pages you swipe through in the panel</string>
+    <string name="page_order_note">The first page is the one the panel opens on. Pages with nothing to show, such as Widgets before you add one, are skipped.</string>
+    <string name="page_apps">Apps</string>
+    <string name="page_tools">Tools</string>
+    <string name="page_sliders">Volume and brightness</string>
+    <string name="page_widgets">Widgets</string>
+    <string name="page_move_up">Move %1$s up</string>
+    <string name="page_move_down">Move %1$s down</string>
     <string name="cat_widgets">Widgets</string>
     <string name="cat_widgets_sum">Show Android widgets from the panel</string>
-    <string name="widgets_note">Widgets appear on the last page of the panel. Tap one there to open it in a card beside the panel. Tap outside the card to close it.</string>
+    <string name="widgets_note">Widgets appear on their own page of the panel. Tap one there to open it in a card beside the panel. Tap outside the card to close it.</string>
     <string name="widgets_none">No widgets added</string>
     <string name="widgets_add">Add widget</string>
     <string name="widgets_manage">Remove widgets</string>
@@ -250,9 +259,20 @@
     <string name="widgets_add_failed">Could not add this widget</string>
     <string name="widget_open_failed">Could not open from this widget</string>
     <string name="widget_size">%1$d × %2$d</string>
+    <string name="widgets_size">Widget card size</string>
+    <string name="widgets_size_title">Choose a widget to resize</string>
+    <string name="widget_size_dialog_title">Card size: %1$s</string>
+    <string name="widget_size_note">Sets the size of the card that opens beside the panel. Sizes are in dp and are limited to the space available on screen.</string>
+    <string name="widget_size_w">Width</string>
+    <string name="widget_size_h">Height</string>
+    <string name="widget_size_auto">Automatic</string>
+    <string name="widget_size_dp">%1$d × %2$d dp</string>
+    <string name="widget_size_reset">Use automatic</string>
+    <string name="widgets_close_tap">Close panel after tapping a widget</string>
+    <string name="widgets_close_tap_desc">Off keeps the panel open, so buttons like skip 10 seconds can be tapped again and again. Turn it on if you want widgets that open an app to close the panel.</string>
     <string name="tut_sec_widgets">Widgets</string>
     <string name="tut_widgets_t">Using widgets</string>
-    <string name="tut_widgets_b">Open Settings, Widgets, tap Add widget, and choose one. Android asks for permission the first time. In the panel, swipe to the last page and tap a widget to open it in a card beside the panel. Tap outside the card to close it. Tapping something in a widget that opens an app also closes the panel.</string>
+    <string name="tut_widgets_b">Open Settings, Widgets, tap Add widget, and choose one. Android asks for permission the first time. In the panel, swipe to the Widgets page and tap a widget to open it in a card beside the panel. Tap outside the card to close it. The panel stays open when you tap something in a widget, so buttons can be tapped repeatedly. To change the size of a card, open Widgets, tap Widget card size, and pick a widget. To make the panel close after a tap instead, turn on Close panel after tapping a widget.</string>
     <string name="tr_widget_t">A widget looks empty</string>
     <string name="tr_widget_b">Open the app that owns the widget once so it can load its data, then open the card again. If it stays empty, remove the widget and add it again.</string>
 </resources>
