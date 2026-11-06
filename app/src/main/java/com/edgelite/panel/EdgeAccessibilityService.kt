@@ -3,6 +3,7 @@ package com.edgelite.panel
 import android.accessibilityservice.AccessibilityService
 import android.annotation.SuppressLint
 import android.app.KeyguardManager
+import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProviderInfo
 import android.content.BroadcastReceiver
 import android.content.ComponentName
@@ -56,6 +57,10 @@ import kotlin.math.roundToInt
 class EdgeAccessibilityService : AccessibilityService() {
 
     companion object {
+        /** Latar kartu widget terang (dipilih lewat tombol di kartu) dan garis tepinya. */
+        private val WIDGET_LIGHT_BG = 0xFFF2F2F2.toInt()
+        private val WIDGET_LIGHT_LINE = 0xFFCFCFCF.toInt()
+
         private const val MATCH = ViewGroup.LayoutParams.MATCH_PARENT
         private const val WRAP = ViewGroup.LayoutParams.WRAP_CONTENT
 
@@ -603,22 +608,29 @@ class EdgeAccessibilityService : AccessibilityService() {
         val right = prefs.getSide(o) == EdgeSide.RIGHT
         val gap = dp(10)
         val panelW = dp(prefs.getPanelW(o))
-        val maxW = max(dp(140), min(sw - panelW - gap - dp(12), dp(360)))
         val maxH = (sh * 0.85f).toInt()
         val growW = (info.resizeMode and AppWidgetProviderInfo.RESIZE_HORIZONTAL) != 0
         val growH = (info.resizeMode and AppWidgetProviderInfo.RESIZE_VERTICAL) != 0
-        val w = max(min(dp(160), maxW), min(if (growW) max(info.minWidth, dp(260)) else info.minWidth, maxW))
+        // Lebar yang diminta widget. Widget lebar (misalnya bawaan Samsung) menampilkan pesan galat bila diberi
+        // jendela di bawah ukuran minimumnya. Bila tidak muat di samping panel, kartu dipusatkan di layar dan
+        // menutupi panel (panel tetap di belakang, ketukan di luar kartu menutupnya).
+        val wantW = if (growW) max(info.minWidth, dp(260)) else info.minWidth
+        val beside = sw - panelW - gap - dp(12)
+        val overlay = wantW > beside
+        val maxW = if (overlay) sw - dp(24) else max(dp(140), min(beside, max(dp(360), wantW)))
+        val w = max(min(dp(160), maxW), min(wantW, maxW))
         val h = max(min(dp(110), maxH), min(if (growH) max(info.minHeight, dp(260)) else info.minHeight, maxH))
 
+        val light = prefs.isWidgetLight(id)
         val night = createConfigurationContext(Configuration(resources.configuration).apply {
-            uiMode = (uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or Configuration.UI_MODE_NIGHT_YES
+            val mode = if (light) Configuration.UI_MODE_NIGHT_NO else Configuration.UI_MODE_NIGHT_YES
+            uiMode = (uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or mode
         })
         val onLaunched: (Boolean) -> Unit = { ok ->
             if (ok) mainHandler.post { closePanel() } else toast(R.string.widget_open_failed)
         }
         val wctx = WidgetContext(night, onLaunched)
 
-        startWidgetListening()
         val view = runCatching { WidgetHost.get(this).createView(wctx, id, info) }.getOrNull()
         if (view == null) {
             toast(R.string.widget_open_failed)
@@ -628,32 +640,66 @@ class EdgeAccessibilityService : AccessibilityService() {
         val d = resources.displayMetrics.density
         val wDp = (w / d).toInt()
         val hDp = (h / d).toInt()
-        view.updateAppWidgetSize(Bundle(), wDp, hDp, wDp, hDp)
+        WidgetHost.applySize(view, wDp, hDp)
 
         val card = FrameLayout(ui).apply {
             isClickable = true
             clipToOutline = true
             elevation = dp(10).toFloat()
             background = GradientDrawable().apply {
-                setColor(Ui.PANEL)
-                setStroke(dp(1), Ui.OUTLINE)
+                setColor(if (light) WIDGET_LIGHT_BG else Ui.PANEL)
+                setStroke(dp(1), if (light) WIDGET_LIGHT_LINE else Ui.OUTLINE)
                 cornerRadius = dp(24).toFloat()
             }
         }
         card.addView(view, FrameLayout.LayoutParams(MATCH, MATCH))
+        // Tombol kecil di pojok untuk menukar latar kartu gelap dan terang, diingat per widget.
+        val toggle = View(ui).apply {
+            contentDescription = getString(R.string.widget_bg_toggle)
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setColor(if (light) Ui.PANEL else WIDGET_LIGHT_BG)
+                setStroke(dp(1), if (light) Ui.OUTLINE else WIDGET_LIGHT_LINE)
+            }
+            setOnClickListener {
+                prefs.setWidgetLight(id, !light)
+                showWidgetCard(id)
+            }
+        }
+        card.addView(toggle, FrameLayout.LayoutParams(dp(28), dp(28), Gravity.TOP or Gravity.END).apply {
+            topMargin = dp(10); marginEnd = dp(10)
+        })
 
         val lp = FrameLayout.LayoutParams(
             w, h,
-            (if (right) Gravity.END else Gravity.START) or Gravity.CENTER_VERTICAL
+            if (overlay) Gravity.CENTER else (if (right) Gravity.END else Gravity.START) or Gravity.CENTER_VERTICAL
         )
-        if (right) lp.marginEnd = panelW + gap else lp.marginStart = panelW + gap
+        if (!overlay) { if (right) lp.marginEnd = panelW + gap else lp.marginStart = panelW + gap }
         root.addView(card, lp)
         widgetCard = card
+
+        // Mulai mendengarkan setelah tampilannya terdaftar di tuan rumah, supaya pembaruan awal dari sistem
+        // sampai ke tampilan ini. Lalu minta penyedia mengirim ulang kontennya: widget yang belum pernah
+        // diperbarui sejak ditambahkan (umum di widget Samsung) bisa tampil kosong sampai diminta.
+        startWidgetListening()
+        refreshWidget(id, info)
+        mainHandler.postDelayed({ if (widgetCard === card) refreshWidget(id, info) }, 1500)
 
         card.alpha = 0f
         card.translationX = (if (right) 1 else -1) * dp(20).toFloat()
         card.animate().alpha(1f).translationX(0f).setDuration(180)
             .setInterpolator(DecelerateInterpolator()).start()
+    }
+
+    /** Meminta penyedia widget mengirim ulang konten lewat siaran pembaruan standar. */
+    private fun refreshWidget(id: Int, info: AppWidgetProviderInfo) {
+        runCatching {
+            sendBroadcast(
+                Intent(AppWidgetManager.ACTION_APPWIDGET_UPDATE)
+                    .setComponent(info.provider)
+                    .putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, intArrayOf(id))
+            )
+        }
     }
 
     private fun hideWidgetCard(animated: Boolean = true) {
