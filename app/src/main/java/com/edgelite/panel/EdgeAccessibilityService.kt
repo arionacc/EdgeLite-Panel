@@ -624,9 +624,7 @@ class EdgeAccessibilityService : AccessibilityService() {
             toast(R.string.widget_open_failed)
             return
         }
-        // Android 12 ke atas: ketukan ditangani lewat PendingIntent (bisa membawa izin peluncuran Android 14).
-        // Di bawahnya, [WidgetContext] meneruskan IntentSender.
-        if (Build.VERSION.SDK_INT >= 31) view.setInteractionHandler(WidgetHost.interactionHandler(onLaunched))
+        // Ketukan widget diteruskan oleh [WidgetContext] (IntentSender), karena konteks layanan tidak mendukungnya.
         val d = resources.displayMetrics.density
         val wDp = (w / d).toInt()
         val hDp = (h / d).toInt()
