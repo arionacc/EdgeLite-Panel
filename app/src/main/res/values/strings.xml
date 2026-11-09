@@ -270,6 +270,20 @@
     <string name="widget_size_large">Large</string>
     <string name="widget_size_auto_dp">Automatic (%1$d × %2$d dp)</string>
     <string name="widget_size_handle">Drag to resize</string>
+    <string name="widgets_icon">Widget icons</string>
+    <string name="widgets_icon_title">Choose a widget to change its icon</string>
+    <string name="widget_icon_state_default">Widget\'s own icon</string>
+    <string name="widget_icon_state_custom">Custom icon</string>
+    <string name="widget_icon_dialog_title">Icon: %1$s</string>
+    <string name="widget_icon_note">Choose how this widget looks in the panel. Pick one of EdgeLite\'s icons, the icon of any installed app, or an icon from an icon pack you have installed (Nova, ADW, and similar). This replaces the widget\'s own icon, such as the logo of the app that provides it.</string>
+    <string name="widget_icon_use_default">Use the widget\'s own icon</string>
+    <string name="widget_icon_tab_icons">Icons</string>
+    <string name="widget_icon_tab_apps">Apps</string>
+    <string name="widget_icon_tab_packs">Icon packs</string>
+    <string name="widget_icon_search">Search</string>
+    <string name="widget_icon_pack_choose">Choose an icon pack</string>
+    <string name="widget_icon_pack_title">Icon pack</string>
+    <string name="widget_icon_no_packs">No icon packs found. Install an icon pack of the kind used by Nova or ADW launchers, then open this again.</string>
     <string name="widget_error_title">This widget can\'t be shown here</string>
     <string name="widget_error_reason">Reason: %1$s</string>
     <string name="widgets_config_failed">The setup screen of this widget could not be opened, so it was added with its default settings.</string>
@@ -277,7 +291,7 @@
     <string name="widgets_close_tap_desc">Off keeps the panel open, so buttons like skip 10 seconds can be tapped again and again. Turn it on if you want widgets that open an app to close the panel.</string>
     <string name="tut_sec_widgets">Widgets</string>
     <string name="tut_widgets_t">Using widgets</string>
-    <string name="tut_widgets_b">Open Settings, Widgets, tap Add widget, and choose one. Android asks for permission the first time. In the panel, swipe to the Widgets page and tap a widget to open it in a card beside the panel. Tap outside the card to close it. The panel stays open when you tap something in a widget, so buttons can be tapped repeatedly. To change the size of a card, open Widgets, tap Widget card size, pick a widget, then drag the corner handle or choose a preset while watching the live preview. To make the panel close after a tap instead, turn on Close panel after tapping a widget.</string>
+    <string name="tut_widgets_b">Open Settings, Widgets, tap Add widget, and choose one. Android asks for permission the first time. In the panel, swipe to the Widgets page and tap a widget to open it in a card beside the panel. Tap outside the card to close it. The panel stays open when you tap something in a widget, so buttons can be tapped repeatedly. To change the size of a card, open Widgets, tap Widget card size, pick a widget, then drag the corner handle or choose a preset while watching the live preview. To change the icon a widget has in the panel, open Widgets, tap Widget icons, pick a widget, then choose one of EdgeLite\'s icons, the icon of an installed app, or an icon from an installed icon pack. To make the panel close after a tap instead, turn on Close panel after tapping a widget.</string>
     <string name="tr_widget_t">A widget looks empty</string>
     <string name="tr_widget_b">Open the app that owns the widget once so it can load its data, then open the card again. If it stays empty, remove the widget and add it again.</string>
 </resources>

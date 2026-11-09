@@ -103,6 +103,35 @@ class Prefs(context: Context) {
     }
 
     /**
+     * Ikon kustom per widget, format `id:pilihan` dipisah koma (lihat [WidgetIcons] untuk bentuk pilihan).
+     * Widget tanpa entri memakai ikon dari penyedianya. Seperti [widgets], terikat pada perangkat ini
+     * dan tidak ikut diekspor.
+     */
+    private val widgetIcons: Map<Int, String>
+        get() = (sp.getString("widget_icons", "") ?: "").split(",").mapNotNull { e ->
+            val i = e.indexOf(':')
+            if (i <= 0) return@mapNotNull null
+            val id = e.substring(0, i).trim().toIntOrNull() ?: return@mapNotNull null
+            val choice = e.substring(i + 1).trim()
+            if (WidgetIcons.isValid(choice)) id to choice else null
+        }.toMap()
+
+    /** Pilihan ikon kustom widget, atau null bila memakai ikon bawaan widget. */
+    fun getWidgetIcon(id: Int): String? = widgetIcons[id]
+
+    /** Mengatur ikon kustom widget. [choice] null mengembalikan ke ikon bawaan widget. */
+    fun setWidgetIcon(id: Int, choice: String?) = saveWidgetIcons(
+        widgetIcons.toMutableMap().also { if (choice == null) it.remove(id) else it[id] = choice }
+    )
+
+    /** Membuang ikon milik widget yang sudah tidak ada di [keep]. */
+    fun pruneWidgetIcons(keep: List<Int>) = saveWidgetIcons(widgetIcons.filterKeys { it in keep })
+
+    private fun saveWidgetIcons(m: Map<Int, String>) {
+        sp.edit().putString("widget_icons", m.entries.joinToString(",") { "${it.key}:${it.value}" }).apply()
+    }
+
+    /**
      * Urutan halaman panel. Kode: a aplikasi, t alat (pintasan akses cepat), v volume dan kecerahan,
      * w widget. Kode yang hilang atau tak dikenal dibuang, kode yang belum disebut ditambahkan di belakang
      * menurut urutan bawaan. Halaman yang kosong dilewati saat panel dibangun.

@@ -580,7 +580,23 @@ class EdgeAccessibilityService : AccessibilityService() {
         if (ui.theme.resolveAttribute(android.R.attr.selectableItemBackground, tv, true)) {
             item.setBackgroundResource(tv.resourceId)
         }
-        item.addView(ImageView(ui).apply { setImageDrawable(drawable) }, LinearLayout.LayoutParams(dp(iconDp), dp(iconDp)))
+        // Ikon kustom (pengaturan Ikon widget) menggantikan ikon penyedia widget, yang sering berupa logo
+        // aplikasi widget. Ikon bawaan EdgeLite digambar seperti ikon di halaman alat, ikon aplikasi apa adanya.
+        // Ikon paket ikon dimuat apa adanya. Aplikasi atau paket yang sudah dihapus jatuh kembali ke ikon penyedia widget.
+        val choice = prefs.getWidgetIcon(id)
+        val builtin = WidgetIcons.builtinFor(choice)
+        val appIcon = WidgetIcons.appFor(choice)?.let { runCatching { pm.getApplicationIcon(it) }.getOrNull() }
+            ?: WidgetIcons.packFor(choice)?.let { IconPacks.load(this, it.first, it.second) }
+        val icon = ImageView(ui)
+        if (builtin != null) {
+            val pad = (dp(iconDp) * 0.26f).toInt()
+            icon.setImageResource(builtin.icon)
+            icon.setPadding(pad, pad, pad, pad)
+            styleQuickIcon(icon, false)
+        } else {
+            icon.setImageDrawable(appIcon ?: drawable)
+        }
+        item.addView(icon, LinearLayout.LayoutParams(dp(iconDp), dp(iconDp)))
         if (showLabels) {
             item.addView(TextView(ui).apply {
                 text = name

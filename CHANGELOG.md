@@ -4,6 +4,12 @@ All notable changes to EdgeLite Panel are listed here, newest first.
 
 Versions 1.0.4 and 1.2.6 were never published. Their changes are included in 1.0.5 and 1.2.7.
 
+## 1.6.0
+
+### Added
+- Widget icons. Each widget on the Widgets page of the panel can now have its own icon, so the logo of the app that provides the widget (KWGT, for example) no longer has to show. Open Widgets in settings, tap Widget icons, pick a widget, then choose one of EdgeLite's icons, the icon of any installed app, or an icon from an installed icon pack (the format used by Nova, ADW, GO, and Apex). Apps and icon packs have a search box. A preview at the top shows the choice before it is saved, and Use the widget's own icon goes back to the default.
+- Widget icons are tied to this phone, like the widgets themselves, so they are not part of exported settings. The manifest only gains queries so icon packs are visible, no new permission. If the app or icon pack chosen as an icon is uninstalled, the widget falls back to its own icon.
+
 ## 1.5.1
 
 ### Changed

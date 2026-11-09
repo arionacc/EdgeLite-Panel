@@ -17,13 +17,20 @@ import android.os.Bundle
 import android.os.Process
 import android.os.PowerManager
 import android.provider.Settings
+import android.text.Editable
+import android.text.TextWatcher
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.EditorInfo
 import android.content.res.Configuration
 import android.view.MotionEvent
+import android.widget.AbsListView
+import android.widget.BaseAdapter
+import android.widget.EditText
 import android.widget.FrameLayout
+import android.widget.GridView
 import android.widget.HorizontalScrollView
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -52,6 +59,9 @@ private const val SOURCE_URL = "https://github.com/arionacc/EdgeLite-Panel"
 
 private const val REQ_WIDGET_BIND = 7301
 private const val REQ_WIDGET_CONFIG = 7302
+
+/** Satu pilihan di kisi ikon widget: kode pilihan (lihat [WidgetIcons]) dan nama untuk pembaca layar. */
+private class IconCell(val choice: String, val label: String)
 
 /** Satu penyedia widget di daftar pilihan. Ukuran dalam sel kisi. */
 private class WidgetEntry(
@@ -92,6 +102,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var widgetSummary: TextView
     private lateinit var widgetManage: View
     private lateinit var widgetSize: View
+    private lateinit var widgetIcon: View
 
     /** ID widget yang sedang ditambahkan, menunggu izin atau layar konfigurasinya selesai. */
     private var pendingWidgetId = -1
@@ -742,6 +753,8 @@ class MainActivity : AppCompatActivity() {
             b.addTop(pill(getString(R.string.widgets_add), false) { pickWidget() }, 20)
             widgetSize = pill(getString(R.string.widgets_size), false) { pickWidgetForSize() }
             b.addTop(widgetSize, 10)
+            widgetIcon = pill(getString(R.string.widgets_icon), false) { pickWidgetForIcon() }
+            b.addTop(widgetIcon, 10)
             b.addTop(widgetManage, 10)
             b.addTop(
                 switchRow(
@@ -1552,7 +1565,9 @@ class MainActivity : AppCompatActivity() {
             if (names.isEmpty()) getString(R.string.widgets_none) else names.joinToString(", ")
         widgetManage.visibility = if (names.isEmpty()) View.GONE else View.VISIBLE
         widgetSize.visibility = widgetManage.visibility
+        widgetIcon.visibility = widgetManage.visibility
         prefs.pruneWidgetSizes(valid)
+        prefs.pruneWidgetIcons(valid)
     }
 
     /** Memilih widget yang ukuran kartunya mau diatur. Tiap baris menampilkan ukuran saat ini. */
@@ -1767,6 +1782,266 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
+    /** Memilih widget yang ikonnya mau diganti. Tiap baris menunjukkan apakah ikonnya sudah kustom. */
+    private fun pickWidgetForIcon() {
+        val ids = WidgetHost.validIds(this, prefs.widgets)
+        if (ids.isEmpty()) return
+        val pm = packageManager
+        val names = ids.map { id ->
+            val label = WidgetHost.info(this, id)?.let { runCatching { it.loadLabel(pm).toString() }.getOrNull() } ?: id.toString()
+            val state = getString(
+                if (prefs.getWidgetIcon(id) != null) R.string.widget_icon_state_custom else R.string.widget_icon_state_default
+            )
+            "$label ($state)"
+        }
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.widgets_icon_title)
+            .setItems(names.toTypedArray()) { _, i -> showWidgetIconDialog(ids[i]) }
+            .setNegativeButton(R.string.close, null)
+            .show()
+    }
+
+    /**
+     * Mengganti ikon satu widget di halaman Widget panel. Sumbernya tiga: ikon bawaan EdgeLite (set ikon akses
+     * cepat), ikon aplikasi terpasang, dan ikon dari paket ikon pihak ketiga (satu paket dipilih lewat tombol di
+     * tab Paket ikon). Tab Aplikasi dan Paket ikon punya kolom cari. Tombol "Pakai ikon bawaan widget" kembali ke
+     * ikon penyedia widget. Pratinjau di atas menampilkan pilihan saat ini, dan baru disimpan saat Simpan diketuk.
+     * Daftar aplikasi dan paket ikon dimuat di latar, jadi tabnya bisa kosong sebentar bila belum siap.
+     */
+    private fun showWidgetIconDialog(id: Int) {
+        val info = WidgetHost.info(this, id) ?: return
+        val pm = packageManager
+        val label = runCatching { info.loadLabel(pm).toString() }.getOrDefault("")
+        val providerIcon = runCatching { info.loadIcon(this, resources.displayMetrics.densityDpi) }.getOrNull()
+            ?: pm.defaultActivityIcon
+
+        var choice: String? = prefs.getWidgetIcon(id)
+        var tab = when {
+            WidgetIcons.packFor(choice) != null -> 2
+            WidgetIcons.appFor(choice) != null -> 1
+            else -> 0
+        }
+        var apps: List<AppItem> = emptyList()
+        var packs: List<IconPacks.Pack> = emptyList()
+        var packPkg: String? = WidgetIcons.packFor(choice)?.first
+        var packIcons: List<String> = emptyList()
+        var query = ""
+        val cellIcon = dp(48)
+        val previewIcon = dp(64)
+
+        // Menggambar satu pilihan ke ImageView: ikon bawaan di lingkaran seperti di panel, ikon aplikasi dan ikon
+        // paket apa adanya, dan tanpa pilihan (atau sumbernya sudah dihapus) ikon dari penyedia widget.
+        fun draw(iv: ImageView, c: String?, size: Int) {
+            iv.clearColorFilter()
+            iv.background = null
+            iv.setPadding(0, 0, 0, 0)
+            val builtin = WidgetIcons.builtinFor(c)
+            if (builtin != null) {
+                val pad = (size * 0.26f).toInt()
+                iv.setImageResource(builtin.icon)
+                iv.setPadding(pad, pad, pad, pad)
+                iv.setColorFilter(Ui.TEXT)
+                iv.background = GradientDrawable().apply {
+                    shape = GradientDrawable.OVAL
+                    setColor(Ui.OUTLINE)
+                }
+            } else {
+                val custom = WidgetIcons.appFor(c)?.let { runCatching { pm.getApplicationIcon(it) }.getOrNull() }
+                    ?: WidgetIcons.packFor(c)?.let { IconPacks.load(this, it.first, it.second) }
+                iv.setImageDrawable(custom ?: providerIcon)
+            }
+        }
+
+        fun cells(): List<IconCell> = when (tab) {
+            0 -> WidgetIcons.builtin().map { IconCell(WidgetIcons.builtinChoice(it), getString(it.label)) }
+            1 -> apps.filter { it.label.contains(query, ignoreCase = true) }
+                .map { IconCell(WidgetIcons.appChoice(it.pkg), it.label) }
+            else -> packPkg?.let { pk ->
+                packIcons.filter { it.contains(query, ignoreCase = true) }
+                    .map { IconCell(WidgetIcons.packChoice(pk, it), it) }
+            } ?: emptyList()
+        }
+
+        var data = cells()
+        val preview = ImageView(this)
+        draw(preview, choice, previewIcon)
+        preview.importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+
+        val grid = GridView(this)
+        val iconAdapter = object : BaseAdapter() {
+            override fun getCount(): Int = data.size
+            override fun getItem(position: Int): Any = data[position]
+            override fun getItemId(position: Int): Long = position.toLong()
+            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+                val cell = data[position]
+                val holder = (convertView as? FrameLayout) ?: FrameLayout(this@MainActivity).apply {
+                    layoutParams = AbsListView.LayoutParams(MATCH, dp(64))
+                    addView(ImageView(this@MainActivity), FrameLayout.LayoutParams(cellIcon, cellIcon, Gravity.CENTER))
+                }
+                draw(holder.getChildAt(0) as ImageView, cell.choice, cellIcon)
+                holder.background = if (cell.choice == choice) bg(Ui.CONTROL, 16) else null
+                holder.contentDescription = cell.label
+                holder.isSelected = cell.choice == choice
+                return holder
+            }
+        }
+        grid.apply {
+            numColumns = GridView.AUTO_FIT
+            columnWidth = dp(72)
+            stretchMode = GridView.STRETCH_COLUMN_WIDTH
+            verticalSpacing = dp(4)
+            horizontalSpacing = dp(4)
+            selector = ColorDrawable(Color.TRANSPARENT)
+            isVerticalScrollBarEnabled = false
+            this.adapter = iconAdapter
+            setOnItemClickListener { _, _, position, _ ->
+                choice = data[position].choice
+                draw(preview, choice, previewIcon)
+                iconAdapter.notifyDataSetChanged()
+            }
+        }
+
+        // Kolom cari (tab Aplikasi dan Paket ikon) dan tombol pilih paket (tab Paket ikon saja).
+        val search = EditText(this).apply {
+            hint = getString(R.string.widget_icon_search)
+            textSize = Ui.TEXT_BODY
+            setTextColor(Ui.TEXT)
+            setHintTextColor(Ui.MUTED)
+            isSingleLine = true
+            minHeight = dp(Ui.CONTROL_HEIGHT_DP)
+            setPadding(dp(20), dp(8), dp(20), dp(8))
+            background = bg(Ui.CONTROL, capsule = true)
+            imeOptions = EditorInfo.IME_ACTION_DONE
+        }
+        val packNote = note(getString(R.string.widget_icon_no_packs))
+        lateinit var packButton: TextView
+
+        fun refreshPackBar() {
+            val name = packs.firstOrNull { it.pkg == packPkg }?.label
+            packButton.text = name ?: getString(R.string.widget_icon_pack_choose)
+            packButton.visibility = if (tab == 2 && packs.isNotEmpty()) View.VISIBLE else View.GONE
+            packNote.visibility = if (tab == 2 && packs.isEmpty()) View.VISIBLE else View.GONE
+            search.visibility = if (tab == 0 || (tab == 2 && packs.isEmpty())) View.GONE else View.VISIBLE
+        }
+
+        fun reload() {
+            data = cells()
+            iconAdapter.notifyDataSetChanged()
+            grid.setSelection(0)
+        }
+
+        // Ikon paket dibaca di thread latar karena paket besar memuat ribuan entri.
+        fun loadPack(pkg: String) {
+            packPkg = pkg
+            packIcons = emptyList()
+            refreshPackBar()
+            reload()
+            val app = applicationContext
+            Thread {
+                val list = IconPacks.icons(app, pkg)
+                runOnUiThread {
+                    if (packPkg == pkg && !isFinishing && !isDestroyed) {
+                        packIcons = list
+                        reload()
+                    }
+                }
+            }.start()
+        }
+
+        packButton = pill("", false) {
+            if (packs.isEmpty()) return@pill
+            MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.widget_icon_pack_title)
+                .setSingleChoiceItems(
+                    packs.map { it.label }.toTypedArray(), packs.indexOfFirst { it.pkg == packPkg }
+                ) { d, i ->
+                    d.dismiss()
+                    loadPack(packs[i].pkg)
+                }
+                .setNegativeButton(R.string.cancel, null)
+                .show()
+        }
+
+        search.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                query = s?.toString()?.trim() ?: ""
+                reload()
+            }
+        })
+
+        AppRepo.load(this) { list ->
+            apps = list
+            if (tab == 1) reload()
+        }
+        val app = applicationContext
+        Thread {
+            val found = runCatching { IconPacks.installed(app) }.getOrDefault(emptyList())
+            runOnUiThread {
+                if (isFinishing || isDestroyed) return@runOnUiThread
+                packs = found
+                if (packPkg != null && packs.none { it.pkg == packPkg }) packPkg = null
+                if (packPkg == null && tab == 2) packPkg = packs.firstOrNull()?.pkg
+                refreshPackBar()
+                packPkg?.let { if (tab == 2) loadPack(it) }
+            }
+        }.start()
+
+        val useDefault = pill(getString(R.string.widget_icon_use_default), false) {
+            choice = null
+            draw(preview, null, previewIcon)
+            iconAdapter.notifyDataSetChanged()
+        }
+        val tabs = segmented(
+            listOf(
+                getString(R.string.widget_icon_tab_icons),
+                getString(R.string.widget_icon_tab_apps),
+                getString(R.string.widget_icon_tab_packs)
+            ), tab
+        ) { i ->
+            tab = i
+            query = ""
+            search.setText("")
+            if (i == 2 && packPkg == null) packPkg = packs.firstOrNull()?.pkg
+            refreshPackBar()
+            val pk = packPkg
+            if (i == 2 && pk != null && packIcons.isEmpty()) loadPack(pk) else reload()
+        }
+
+        val top = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+        top.addView(preview, LinearLayout.LayoutParams(previewIcon, previewIcon))
+        top.addView(useDefault, LinearLayout.LayoutParams(0, WRAP, 1f).apply { marginStart = dp(16) })
+
+        // Tinggi kisi mengikuti tinggi layar supaya dialog tetap muat di mode lanskap.
+        val gridH = (resources.displayMetrics.heightPixels * 0.28f).toInt().coerceIn(dp(130), dp(260))
+        val box = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(24), dp(8), dp(24), dp(4))
+        }
+        box.addView(note(getString(R.string.widget_icon_note)))
+        box.addTop(top, 14)
+        box.addTop(tabs, 14)
+        box.addTop(packButton, 10)
+        box.addTop(packNote, 10)
+        box.addTop(search, 10)
+        box.addView(grid, LinearLayout.LayoutParams(MATCH, gridH).apply { topMargin = dp(12) })
+        refreshPackBar()
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle(getString(R.string.widget_icon_dialog_title, label))
+            .setView(ScrollView(this).apply { addView(box) })
+            .setPositiveButton(R.string.save) { _, _ ->
+                prefs.setWidgetIcon(id, choice)
+                EdgeAccessibilityService.refresh(this)
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
     private fun appLabelOf(pkg: String): String =
         runCatching { packageManager.getApplicationLabel(packageManager.getApplicationInfo(pkg, 0)).toString() }
             .getOrDefault(pkg)
@@ -1960,6 +2235,7 @@ class MainActivity : AppCompatActivity() {
                 ids.forEachIndexed { i, id -> if (!keep[i]) runCatching { host.deleteAppWidgetId(id) } }
                 prefs.widgets = ids.filterIndexed { i, _ -> keep[i] }
                 prefs.pruneWidgetSizes(prefs.widgets)
+                prefs.pruneWidgetIcons(prefs.widgets)
                 refreshWidgets()
                 EdgeAccessibilityService.refresh(this)
             }
