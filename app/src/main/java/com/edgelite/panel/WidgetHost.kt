@@ -1,6 +1,7 @@
 package com.edgelite.panel
 
 import android.appwidget.AppWidgetHost
+import android.appwidget.AppWidgetHostView
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProviderInfo
 import android.app.ActivityOptions
