@@ -21,9 +21,6 @@ const val WIDGET_W_MAX = 600
 const val WIDGET_H_MIN = 80
 const val WIDGET_H_MAX = 700
 
-/** Panjang maksimum nama kustom widget. */
-const val WIDGET_NAME_MAX = 24
-
 class Prefs(context: Context) {
 
     private val sp = context.applicationContext
@@ -135,79 +132,6 @@ class Prefs(context: Context) {
     }
 
     /**
-     * Nama kustom per widget, disimpan sebagai objek JSON `{"id":"nama"}`. Widget tanpa entri memakai nama dari
-     * penyedianya. Seperti [widgets], terikat pada perangkat ini dan tidak ikut diekspor.
-     */
-    private val widgetNames: Map<Int, String>
-        get() = runCatching {
-            val o = JSONObject(sp.getString("widget_names", "") ?: "")
-            o.keys().asSequence().mapNotNull { k ->
-                val id = k.toIntOrNull() ?: return@mapNotNull null
-                val n = cleanWidgetName(o.optString(k))
-                if (n.isEmpty()) null else id to n
-            }.toMap()
-        }.getOrDefault(emptyMap())
-
-    /** Nama kustom widget, atau null bila memakai nama dari penyedia widget. */
-    fun getWidgetName(id: Int): String? = widgetNames[id]
-
-    /** Mengatur nama kustom widget. Nama kosong mengembalikan ke nama dari penyedia widget. */
-    fun setWidgetName(id: Int, name: String?) {
-        val n = cleanWidgetName(name ?: "")
-        saveWidgetNames(widgetNames.toMutableMap().also { if (n.isEmpty()) it.remove(id) else it[id] = n })
-    }
-
-    /** Membuang nama milik widget yang sudah tidak ada di [keep]. */
-    fun pruneWidgetNames(keep: List<Int>) = saveWidgetNames(widgetNames.filterKeys { it in keep })
-
-    private fun saveWidgetNames(m: Map<Int, String>) {
-        val o = JSONObject()
-        m.forEach { (id, n) -> o.put(id.toString(), n) }
-        sp.edit().putString("widget_names", o.toString()).apply()
-    }
-
-    private fun cleanWidgetName(s: String): String =
-        s.replace(Regex("\\s+"), " ").trim().take(WIDGET_NAME_MAX)
-
-    /**
-     * Warna kustom per widget, format `id:AARRGGBB` (heksadesimal) dipisah koma. Dipakai sebagai latar bulat
-     * ikon widget di panel dan garis tepi kartunya. Terikat pada perangkat ini dan tidak ikut diekspor.
-     */
-    private val widgetColors: Map<Int, Int>
-        get() = (sp.getString("widget_colors", "") ?: "").split(",").mapNotNull { e ->
-            val parts = e.split(":")
-            if (parts.size != 2) return@mapNotNull null
-            val id = parts[0].trim().toIntOrNull() ?: return@mapNotNull null
-            val c = parts[1].trim().toLongOrNull(16)?.toInt() ?: return@mapNotNull null
-            id to (c or 0xFF000000.toInt())
-        }.toMap()
-
-    /** Warna kustom widget (selalu buram), atau null bila memakai tampilan bawaan. */
-    fun getWidgetColor(id: Int): Int? = widgetColors[id]
-
-    /** Mengatur warna widget. [color] null mengembalikan ke tampilan bawaan. */
-    fun setWidgetColor(id: Int, color: Int?) = saveWidgetColors(
-        widgetColors.toMutableMap().also { if (color == null) it.remove(id) else it[id] = color }
-    )
-
-    /** Membuang warna milik widget yang sudah tidak ada di [keep]. */
-    fun pruneWidgetColors(keep: List<Int>) = saveWidgetColors(widgetColors.filterKeys { it in keep })
-
-    private fun saveWidgetColors(m: Map<Int, Int>) {
-        sp.edit().putString("widget_colors", m.entries.joinToString(",") {
-            "${it.key}:${String.format("%08X", it.value)}"
-        }).apply()
-    }
-
-    /**
-     * Posisi vertikal kartu widget (persen dari ruang kosong di atas dan bawah kartu): 0 menempel di atas,
-     * 50 di tengah (bawaan), 100 menempel di bawah. Berlaku untuk dua orientasi dan ikut diekspor.
-     */
-    var widgetCardY: Int
-        get() = sp.getInt("widget_card_y", 50).coerceIn(0, 100)
-        set(v) { sp.edit().putInt("widget_card_y", v.coerceIn(0, 100)).apply() }
-
-    /**
      * Urutan halaman panel. Kode: a aplikasi, t alat (pintasan akses cepat), v volume dan kecerahan,
      * w widget. Kode yang hilang atau tak dikenal dibuang, kode yang belum disebut ditambahkan di belakang
      * menurut urutan bawaan. Halaman yang kosong dilewati saat panel dibangun.
@@ -218,14 +142,6 @@ class Prefs(context: Context) {
             return saved + PAGE_CODES.filter { it !in saved }
         }
         set(v) { sp.edit().putString("page_order", v.joinToString(",")).apply() }
-
-    /**
-     * versionCode terakhir yang sudah dilihat di dialog Yang baru. 0 berarti belum pernah (pemasangan baru atau
-     * pembaruan dari versi tanpa fitur ini): dialog tidak ditampilkan otomatis, hanya dicatat. Tidak diekspor.
-     */
-    var changelogSeen: Int
-        get() = sp.getInt("changelog_seen", 0)
-        set(v) { sp.edit().putInt("changelog_seen", v).apply() }
 
     /** Aplikasi perekam layar pilihan pengguna. Kosong berarti dicari otomatis. */
     var recorderPkg: String
@@ -354,7 +270,6 @@ class Prefs(context: Context) {
         d.put("labels", showLabels)
         d.put("win_fit", winFit)
         d.put("widget_close_tap", widgetCloseOnTap)
-        d.put("widget_card_y", widgetCardY)
         d.put("page_order", pageOrder.joinToString(","))
         d.put("quick_actions", sp.getString("quick_actions", "") ?: "")
         d.put("app_shapes", sp.getString("app_shapes", "") ?: "")
@@ -419,7 +334,6 @@ class Prefs(context: Context) {
                 "icon_dp" -> int(32, 64)
                 "opacity" -> int(50, 100)
                 "corner_dp" -> int(0, 40)
-                "widget_card_y" -> int(0, 100)
                 else -> null
             }
         }

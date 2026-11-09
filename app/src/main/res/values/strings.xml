@@ -284,19 +284,6 @@
     <string name="widget_icon_pack_choose">Choose an icon pack</string>
     <string name="widget_icon_pack_title">Icon pack</string>
     <string name="widget_icon_no_packs">No icon packs found. Install an icon pack of the kind used by Nova or ADW launchers, then open this again.</string>
-    <string name="widgets_arrange">Name, color, and order</string>
-    <string name="widgets_arrange_title">Arrange widgets</string>
-    <string name="widgets_arrange_note">Use the arrows to change the order of the icons on the Widgets page. Tap a widget to rename it or give it a color.</string>
-    <string name="widget_style_edit">Edit %1$s</string>
-    <string name="widget_style_title">Widget: %1$s</string>
-    <string name="widget_style_note">The name is shown under the icon in the panel when app names are on. The color is used behind the icon and as the border of the card. Leave the name empty to use the widget\'s own name.</string>
-    <string name="widget_name_label">Name</string>
-    <string name="widget_name_hint">Name (empty: %1$s)</string>
-    <string name="widget_color_label">Color</string>
-    <string name="widget_color_default">No color</string>
-    <string name="widget_color_hex">Custom color (#RRGGBB)</string>
-    <string name="widgets_pos">Widget card position</string>
-    <string name="widgets_pos_note">Height of the widget card on screen: 0% at the top, 50% in the middle, 100% at the bottom.</string>
     <string name="widget_error_title">This widget can\'t be shown here</string>
     <string name="widget_error_reason">Reason: %1$s</string>
     <string name="widgets_config_failed">The setup screen of this widget could not be opened, so it was added with its default settings.</string>
@@ -304,15 +291,7 @@
     <string name="widgets_close_tap_desc">Off keeps the panel open, so buttons like skip 10 seconds can be tapped again and again. Turn it on if you want widgets that open an app to close the panel.</string>
     <string name="tut_sec_widgets">Widgets</string>
     <string name="tut_widgets_t">Using widgets</string>
-    <string name="tut_widgets_b">Open Settings, Widgets, tap Add widget, and choose one. Android asks for permission the first time. In the panel, swipe to the Widgets page and tap a widget to open it in a card beside the panel. Tap outside the card to close it. The panel stays open when you tap something in a widget, so buttons can be tapped repeatedly. To change the size of a card, open Widgets, tap Widget card size, pick a widget, then drag the corner handle or choose a preset while watching the live preview. To change the icon a widget has in the panel, open Widgets, tap Widget icons, pick a widget, then choose one of EdgeLite\'s icons, the icon of an installed app, or an icon from an installed icon pack. To make the panel close after a tap instead, turn on Close panel after tapping a widget. To rename a widget, give it a color, or change the order of the icons, open Widgets, tap Name, color, and order. Widget card position moves the card up or down on screen.</string>
+    <string name="tut_widgets_b">Open Settings, Widgets, tap Add widget, and choose one. Android asks for permission the first time. In the panel, swipe to the Widgets page and tap a widget to open it in a card beside the panel. Tap outside the card to close it. The panel stays open when you tap something in a widget, so buttons can be tapped repeatedly. To change the size of a card, open Widgets, tap Widget card size, pick a widget, then drag the corner handle or choose a preset while watching the live preview. To change the icon a widget has in the panel, open Widgets, tap Widget icons, pick a widget, then choose one of EdgeLite\'s icons, the icon of an installed app, or an icon from an installed icon pack. To make the panel close after a tap instead, turn on Close panel after tapping a widget.</string>
     <string name="tr_widget_t">A widget looks empty</string>
     <string name="tr_widget_b">Open the app that owns the widget once so it can load its data, then open the card again. If it stays empty, remove the widget and add it again.</string>
-    <string name="menu_changelog">What\'s new</string>
-    <string name="changelog_title">What\'s new in %1$s</string>
-    <string name="changelog_try">Try it</string>
-    <string name="cl_widget_name">Widgets can be renamed. The name shows under the icon in the panel.</string>
-    <string name="cl_widget_color">Widgets can have a color, used behind the icon and as the card border.</string>
-    <string name="cl_widget_order">The order of the widget icons can be changed with arrows.</string>
-    <string name="cl_widget_pos">A new slider moves the widget card up or down on screen.</string>
-    <string name="cl_whatsnew">This What\'s new screen. It opens from the menu and shows once after an update.</string>
 </resources>

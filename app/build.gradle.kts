@@ -11,8 +11,8 @@ android {
         applicationId = "com.edgelite.panel"
         minSdk = 26
         targetSdk = 34
-        versionCode = 28
-        versionName = "1.7.0"
+        versionCode = 27
+        versionName = "1.6.0"
     }
 
     // Tanda tangan tetap untuk APK debug yang dibuat GitHub Actions, supaya update bisa dipasang

@@ -66,7 +66,7 @@ Menu names can differ slightly between One UI versions.
 
 - **Open the panel:** swipe the handle inward or tap it
 - **Quick access:** in settings, open Quick access and tap Choose shortcuts. Then swipe the panel sideways to see them. The panel size does not change.
-- **Widgets:** in settings, open Widgets and tap Add widget. Android asks for permission the first time. Then swipe the panel to the Widgets page and tap a widget to open it in a card beside the panel. Tap outside the card to close it. The panel stays open when you tap inside a widget. To resize a card, tap Widget card size and drag the corner handle while watching the live preview. To change the icon a widget has in the panel, tap Widget icons and pick one of EdgeLite's icons, the icon of any installed app, or an icon from an installed icon pack (Nova, ADW, and similar formats). Tap Name, color, and order to rename widgets, give them a color, and change the order of their icons. Widget card position moves the card up or down on screen.
+- **Widgets:** in settings, open Widgets and tap Add widget. Android asks for permission the first time. Then swipe the panel to the Widgets page and tap a widget to open it in a card beside the panel. Tap outside the card to close it. The panel stays open when you tap inside a widget. To resize a card, tap Widget card size and drag the corner handle while watching the live preview. To change the icon a widget has in the panel, tap Widget icons and pick one of EdgeLite's icons, the icon of any installed app, or an icon from an installed icon pack (Nova, ADW, and similar formats).
 - **Open an app:** tap its icon
 - **Close the panel:** tap the dimmed area outside it
 - **Turn off:** use **Disable** or the Quick Settings tile (hides the handle only). To stop the service completely, switch it off in Accessibility.
@@ -80,7 +80,7 @@ Menu names can differ slightly between One UI versions.
 | Apps and actions | Opening apps | Default open mode (Window or Fullscreen), floating window width and height (30 to 100 %, per orientation) with a live preview, app fit (Auto or Exact) |
 | Apps and actions | Quick access | Shortcuts, sliders, and the screen recorder app |
 | Apps and actions | Page order | Order of the panel pages (Apps, Tools, Volume and brightness, Widgets) |
-| Apps and actions | Widgets | Add and remove widgets shown in the panel, card size per widget with live preview, custom icon, name, color and order per widget, card position, close panel after tapping a widget |
+| Apps and actions | Widgets | Add and remove widgets shown in the panel, card size per widget with live preview, custom icon per widget, close panel after tapping a widget |
 | System | Startup | Autostart |
 | System | Export and import | Save and restore all settings as a JSON file |
 
