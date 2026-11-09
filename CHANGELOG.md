@@ -4,20 +4,34 @@ All notable changes to EdgeLite Panel are listed here, newest first.
 
 Versions 1.0.4 and 1.2.6 were never published. Their changes are included in 1.0.5 and 1.2.7.
 
+## 1.5.1
+
+### Added
+- Page order. In settings, Page order lets you arrange the panel pages: Apps, Tools, Volume and brightness, and Widgets. The first page is the one the panel opens on, and pages with nothing to show are skipped. The default order is unchanged.
+- Widget card size. In settings, Widget card size lets you set the card size of each widget with a live preview: the real widget is drawn on a stage and resized by dragging a corner handle or by choosing Automatic, Small, Medium, or Large. The size is limited to the space available on screen.
+- A Close panel after tapping a widget switch in the Widgets settings.
+
+### Changed
+- Tapping something in a widget now keeps the panel open, so buttons such as skip 10 seconds can be tapped repeatedly. Turn on Close panel after tapping a widget if you want the panel to close after a tap, for example for widgets that open an app.
+- A widget that cannot be drawn now shows a clear message with the reason reported by its provider, instead of the generic system error.
+- If the setup screen of a widget cannot be opened by another app, the widget is still added with its default settings.
+- The Tutorial entry for widgets describes the new behavior.
+
+### Notes
+- Widgets and their card sizes are tied to this phone, so they are not part of exported settings and are skipped on import. The Close panel after tapping a widget switch and the page order are exported.
+
 ## 1.5.0
 
 ### Added
 - Widgets. Open Widgets in settings, tap Add widget, and pick one from the list, which is grouped by app and shows each widget's size. Android asks for permission the first time, and widgets that need setup open their own setup screen.
-- Added widgets get their own page in the panel (the last one by default), shown as a list of icons so the panel keeps its size. Tapping one opens the widget in a card beside the panel, on the same side the panel is on. Tap outside the card to close it.
+- Added widgets get the last page of the panel, shown as a list of icons so the panel keeps its size. Tapping one opens the widget in a card beside the panel, on the same side the panel is on. Tap outside the card to close it.
 - The card is sized from the widget's own minimum size, and widgets that can be resized get more room so lists are readable. Widgets are drawn in dark mode to match the card.
-- Tapping something in a widget keeps the panel open, so buttons such as skip 10 seconds can be tapped repeatedly. Turn on Close panel after tapping a widget in settings if you want the panel to close after a tap.
-- The card size of each widget can be set in settings (Widget card size, width and height in dp). The size is limited to the space available on screen, and Use automatic goes back to the size the widget asks for.
+- Tapping something in a widget that opens an app launches it and closes the panel.
 - Remove widgets from settings by unchecking them.
-- The order of the panel pages can be changed in settings (Page order): Apps, Tools, Volume and brightness, and Widgets. The first page is the one the panel opens on, and pages with nothing to show are skipped. The default order is unchanged.
 - The Tutorial has a Using widgets entry and a troubleshooting entry for widgets that look empty.
 
 ### Notes
-- Widgets and their card sizes are tied to this phone, so they are not part of exported settings and are skipped on import. The Close panel after tapping a widget switch and the page order are exported.
+- Widgets are tied to this phone, so they are not part of exported settings and are skipped on import.
 
 ## 1.4.1
 

@@ -8,10 +8,17 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
 import android.content.IntentSender
+import android.graphics.Typeface
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.util.SizeF
+import android.view.Gravity
+import android.view.View
+import android.widget.FrameLayout
+import android.widget.LinearLayout
+import android.widget.RemoteViews
+import android.widget.TextView
 
 /**
  * Tuan rumah widget Android untuk EdgeLite. Satu instance dipakai bersama oleh halaman pengaturan
@@ -28,8 +35,37 @@ object WidgetHost {
 
     fun get(ctx: Context): AppWidgetHost =
         host ?: synchronized(this) {
-            host ?: AppWidgetHost(ctx.applicationContext, HOST_ID).also { host = it }
+            host ?: EdgeAppWidgetHost(ctx.applicationContext, HOST_ID).also { host = it }
         }
+
+    /** Jumlah pemakai yang sedang mendengarkan (layanan dan dialog pratinjau), supaya yang satu tidak mematikan yang lain. */
+    private var listeners = 0
+
+    /** Mulai mendengarkan pembaruan widget bila belum. Pasangkan dengan [release]. Mengembalikan false bila gagal. */
+    @Synchronized
+    fun acquire(ctx: Context): Boolean {
+        if (listeners == 0 && runCatching { get(ctx).startListening() }.isFailure) return false
+        listeners++
+        return true
+    }
+
+    @Synchronized
+    fun release(ctx: Context) {
+        if (listeners == 0) return
+        listeners--
+        if (listeners == 0) runCatching { get(ctx).stopListening() }
+    }
+
+    /** Meminta penyedia widget mengirim ulang konten lewat siaran pembaruan standar. */
+    fun requestUpdate(ctx: Context, id: Int, info: AppWidgetProviderInfo) {
+        runCatching {
+            ctx.sendBroadcast(
+                Intent(AppWidgetManager.ACTION_APPWIDGET_UPDATE)
+                    .setComponent(info.provider)
+                    .putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, intArrayOf(id))
+            )
+        }
+    }
 
     fun info(ctx: Context, id: Int): AppWidgetProviderInfo? =
         runCatching { AppWidgetManager.getInstance(ctx).getAppWidgetInfo(id) }.getOrNull()
@@ -126,4 +162,61 @@ class WidgetContext(base: Context, private val onLaunched: (Boolean) -> Unit) : 
         m.invoke(intent, baseContext, 0, fill, null, null, null, merged)
         true
     }.getOrDefault(false)
+}
+
+/** Tuan rumah yang membuat [EdgeHostView], supaya galat tampilan widget bisa dijelaskan penyebabnya. */
+class EdgeAppWidgetHost(ctx: Context, hostId: Int) : AppWidgetHost(ctx, hostId) {
+    override fun onCreateView(context: Context, appWidgetId: Int, appWidget: AppWidgetProviderInfo?): AppWidgetHostView =
+        EdgeHostView(context)
+}
+
+/**
+ * Tampilan widget dengan keterangan galat sendiri. Bila sistem gagal menggambar konten widget, tampilan bawaan
+ * hanya berbunyi "Problem loading widget". Di sini pesannya jelas, dan penyebabnya (jenis dan pesan galat
+ * dari penyedia widget) ikut ditampilkan, supaya widget yang menolak tampil di luar peluncur bawaan bisa dikenali.
+ */
+class EdgeHostView(context: Context) : AppWidgetHostView(context) {
+    private var errorBox: View? = null
+    private var reasonView: TextView? = null
+
+    override fun getErrorView(): View {
+        val d = resources.displayMetrics.density
+        val box = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            val p = (16 * d).toInt()
+            setPadding(p, p, p, p)
+        }
+        box.addView(TextView(context).apply {
+            text = context.getString(R.string.widget_error_title)
+            setTextColor(Ui.TEXT)
+            textSize = 14f
+            gravity = Gravity.CENTER
+            setTypeface(typeface, Typeface.BOLD)
+        })
+        val reason = TextView(context).apply {
+            setTextColor(Ui.MUTED_HI)
+            textSize = 12f
+            gravity = Gravity.CENTER
+            setPadding(0, (6 * d).toInt(), 0, 0)
+            visibility = View.GONE
+        }
+        box.addView(reason)
+        errorBox = box
+        reasonView = reason
+        return box
+    }
+
+    override fun updateAppWidget(remoteViews: RemoteViews?) {
+        super.updateAppWidget(remoteViews)
+        val box = errorBox ?: return
+        if (remoteViews == null || getChildAt(0) !== box) return
+        // Sistem menelan galatnya, jadi diulang sekali hanya untuk membaca penyebabnya.
+        val cause = runCatching { remoteViews.apply(context, FrameLayout(context)) }.exceptionOrNull() ?: return
+        val root = generateSequence<Throwable>(cause) { it.cause }.last()
+        reasonView?.apply {
+            text = context.getString(R.string.widget_error_reason, "${root.javaClass.simpleName}: ${root.message.orEmpty().take(140)}")
+            visibility = View.VISIBLE
+        }
+    }
 }

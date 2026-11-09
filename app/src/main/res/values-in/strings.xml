@@ -253,17 +253,22 @@
     <string name="widgets_size">Ukuran kartu widget</string>
     <string name="widgets_size_title">Pilih widget yang diatur ukurannya</string>
     <string name="widget_size_dialog_title">Ukuran kartu: %1$s</string>
-    <string name="widget_size_note">Mengatur ukuran kartu yang terbuka di samping panel. Ukuran dalam dp dan dibatasi oleh ruang layar yang tersedia.</string>
-    <string name="widget_size_w">Lebar</string>
-    <string name="widget_size_h">Tinggi</string>
     <string name="widget_size_auto">Otomatis</string>
     <string name="widget_size_dp">%1$d × %2$d dp</string>
-    <string name="widget_size_reset">Pakai otomatis</string>
+    <string name="widget_size_preview_note">Seret pegangan bulat di sudut atau pilih ukuran siap pakai. Widget ditampilkan langsung dan diperkecil agar muat.</string>
+    <string name="widget_size_small">Kecil</string>
+    <string name="widget_size_medium">Sedang</string>
+    <string name="widget_size_large">Besar</string>
+    <string name="widget_size_auto_dp">Otomatis (%1$d × %2$d dp)</string>
+    <string name="widget_size_handle">Seret untuk mengubah ukuran</string>
+    <string name="widget_error_title">Widget ini tidak bisa ditampilkan di sini</string>
+    <string name="widget_error_reason">Penyebab: %1$s</string>
+    <string name="widgets_config_failed">Layar pengaturan widget ini tidak bisa dibuka, jadi widget ditambahkan dengan pengaturan bawaannya.</string>
     <string name="widgets_close_tap">Tutup panel setelah widget disentuh</string>
     <string name="widgets_close_tap_desc">Bila mati, panel tetap terbuka sehingga tombol seperti maju 10 detik bisa diketuk berulang. Nyalakan bila ingin widget yang membuka aplikasi ikut menutup panel.</string>
     <string name="tut_sec_widgets">Widget</string>
     <string name="tut_widgets_t">Memakai widget</string>
-    <string name="tut_widgets_b">Buka Pengaturan, Widget, ketuk Tambah widget, lalu pilih satu. Android meminta izin saat pertama kali. Di panel, geser ke halaman Widget dan ketuk widget untuk membukanya dalam kartu di samping panel. Ketuk di luar kartu untuk menutupnya. Panel tetap terbuka saat bagian widget diketuk, jadi tombol bisa diketuk berulang. Untuk mengubah ukuran kartu, buka Widget, ketuk Ukuran kartu widget, lalu pilih widget. Agar panel menutup setelah diketuk, nyalakan Tutup panel setelah widget disentuh.</string>
+    <string name="tut_widgets_b">Buka Pengaturan, Widget, ketuk Tambah widget, lalu pilih satu. Android meminta izin saat pertama kali. Di panel, geser ke halaman Widget dan ketuk widget untuk membukanya dalam kartu di samping panel. Ketuk di luar kartu untuk menutupnya. Panel tetap terbuka saat bagian widget diketuk, jadi tombol bisa diketuk berulang. Untuk mengubah ukuran kartu, buka Widget, ketuk Ukuran kartu widget, pilih widget, lalu seret pegangan di sudut atau pilih ukuran siap pakai sambil melihat pratinjau langsung. Agar panel menutup setelah diketuk, nyalakan Tutup panel setelah widget disentuh.</string>
     <string name="tr_widget_t">Widget tampak kosong</string>
     <string name="tr_widget_b">Buka aplikasi pemilik widget itu sekali supaya datanya dimuat, lalu buka kartunya lagi. Bila tetap kosong, hapus widget lalu tambahkan lagi.</string>
 </resources>

@@ -10,6 +10,7 @@ import android.graphics.Typeface
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.InsetDrawable
 import android.graphics.drawable.RippleDrawable
 import android.net.Uri
 import android.os.Bundle
@@ -20,6 +21,8 @@ import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
+import android.content.res.Configuration
+import android.view.MotionEvent
 import android.widget.FrameLayout
 import android.widget.HorizontalScrollView
 import android.widget.ImageView
@@ -1572,32 +1575,195 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Mengatur lebar dan tinggi kartu untuk satu widget (dp). Nilai awal slider adalah ukuran pilihan saat
-     * ini, atau perkiraan ukuran otomatis. Tombol Otomatis menghapus pilihan. Ukuran dijepit ke ruang layar
-     * yang tersedia saat kartu dibuka, jadi nilai besar aman di layar kecil.
+     * Mengatur ukuran kartu satu widget dengan pratinjau langsung. Widget asli digambar di panggung, diperkecil
+     * bila perlu agar muat, dan ukurannya diubah dengan menyeret pegangan di sudut kanan bawah atau memilih
+     * ukuran siap pakai. Ketukan pada pratinjau diblokir supaya tidak menjalankan aksi widget. Ukuran yang
+     * ditampilkan sama dengan yang dipakai kartu di panel, kecuali dijepit ruang layar saat kartu dibuka.
      */
+    @Suppress("ClickableViewAccessibility")
     private fun showWidgetSizeDialog(id: Int) {
         val info = WidgetHost.info(this, id) ?: return
         val label = runCatching { info.loadLabel(packageManager).toString() }.getOrDefault("")
         val d = resources.displayMetrics.density
+        val growW = (info.resizeMode and AppWidgetProviderInfo.RESIZE_HORIZONTAL) != 0
+        val growH = (info.resizeMode and AppWidgetProviderInfo.RESIZE_VERTICAL) != 0
+        // Sama dengan ukuran otomatis di EdgeAccessibilityService.showWidgetCard.
+        val autoW = maxOf(160, (if (growW) maxOf(info.minWidth / d, 260f) else info.minWidth / d).toInt()).coerceAtMost(WIDGET_W_MAX)
+        val autoH = maxOf(110, (if (growH) maxOf(info.minHeight / d, 260f) else info.minHeight / d).toInt()).coerceAtMost(WIDGET_H_MAX)
+
         val saved = prefs.getWidgetSize(id)
-        var w = (saved?.first ?: (info.minWidth / d).toInt().coerceAtLeast(260)).coerceIn(WIDGET_W_MIN, WIDGET_W_MAX)
-        var h = (saved?.second ?: (info.minHeight / d).toInt().coerceAtLeast(200)).coerceIn(WIDGET_H_MIN, WIDGET_H_MAX)
+        var auto = saved == null
+        var w = saved?.first ?: autoW
+        var h = saved?.second ?: autoH
+
+        val night = createConfigurationContext(Configuration(resources.configuration).apply {
+            uiMode = (uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or Configuration.UI_MODE_NIGHT_YES
+        })
+        val view = runCatching { WidgetHost.get(this).createView(night, id, info) }.getOrNull()
+        if (view == null) {
+            toast(R.string.widget_open_failed)
+            return
+        }
+
+        val stageH = dp(300)
+        var stageW = 0
+        var scale = 1f
+        var dragging = false
+        var anchorX = 0f
+        var anchorY = 0f
+        val handleSize = dp(44)
+
+        val stage = FrameLayout(this).apply { background = bg(Ui.CARD, 20) }
+        val holder = FrameLayout(this).apply {
+            clipToOutline = true
+            background = GradientDrawable().apply {
+                setColor(Ui.PANEL)
+                setStroke(dp(1), Ui.OUTLINE)
+                cornerRadius = dp(24).toFloat()
+            }
+        }
+        holder.addView(view, FrameLayout.LayoutParams(MATCH, MATCH))
+        holder.addView(View(this).apply { isClickable = true }, FrameLayout.LayoutParams(MATCH, MATCH))
+        stage.addView(holder, FrameLayout.LayoutParams(dp(w), dp(h)))
+
+        val handle = View(this).apply {
+            background = InsetDrawable(
+                GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Ui.LIGHT) }, dp(9)
+            )
+            contentDescription = getString(R.string.widget_size_handle)
+        }
+        stage.addView(handle, FrameLayout.LayoutParams(handleSize, handleSize))
+
+        val readout = TextView(this).apply {
+            textSize = Ui.TEXT_BODY
+            bold()
+            gravity = Gravity.CENTER
+            setTextColor(Ui.TEXT)
+        }
+
+        // Skala dipilih supaya ada sisa ruang 25 persen untuk memperbesar, lalu dihitung ulang saat jari dilepas.
+        fun fitScale() {
+            if (stageW <= 0) return
+            scale = minOf(1f, stageW / (dp(w) * 1.25f), stageH / (dp(h) * 1.25f))
+        }
+
+        fun place() {
+            if (stageW <= 0) return
+            val wp = dp(w)
+            val hp = dp(h)
+            holder.layoutParams = FrameLayout.LayoutParams(wp, hp)
+            holder.pivotX = 0f
+            holder.pivotY = 0f
+            holder.scaleX = scale
+            holder.scaleY = scale
+            holder.x = if (dragging) anchorX else (stageW - wp * scale) / 2f
+            holder.y = if (dragging) anchorY else (stageH - hp * scale) / 2f
+            handle.x = holder.x + wp * scale - handleSize / 2f
+            handle.y = holder.y + hp * scale - handleSize / 2f
+            readout.text = getString(if (auto) R.string.widget_size_auto_dp else R.string.widget_size_dp, w, h)
+            WidgetHost.applySize(view, w, h)
+        }
+
+        fun setSize(nw: Int, nh: Int, isAuto: Boolean) {
+            auto = isAuto
+            w = nw.coerceIn(WIDGET_W_MIN.coerceAtMost(nw), WIDGET_W_MAX)
+            h = nh.coerceIn(WIDGET_H_MIN.coerceAtMost(nh), WIDGET_H_MAX)
+            fitScale()
+            place()
+        }
+
+        stage.addOnLayoutChangeListener { _, l, _, r, _, _, _, _, _ ->
+            val nw = r - l
+            if (nw > 0 && nw != stageW) {
+                stageW = nw
+                fitScale()
+                place()
+            }
+        }
+
+        var startW = 0
+        var startH = 0
+        var downX = 0f
+        var downY = 0f
+        handle.setOnTouchListener { v, e ->
+            when (e.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    startW = w
+                    startH = h
+                    downX = e.rawX
+                    downY = e.rawY
+                    anchorX = holder.x
+                    anchorY = holder.y
+                    dragging = true
+                    v.parent.requestDisallowInterceptTouchEvent(true)
+                    true
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    val k = d * scale
+                    // Batas atas dihitung dari ruang yang tersisa di panggung, supaya kartu tidak keluar dari panggung.
+                    val maxW = maxOf(WIDGET_W_MIN, minOf(WIDGET_W_MAX, ((stageW - anchorX - dp(4)) / k).toInt()))
+                    val maxH = maxOf(WIDGET_H_MIN, minOf(WIDGET_H_MAX, ((stageH - anchorY - dp(4)) / k).toInt()))
+                    val nw = (startW + ((e.rawX - downX) / k).toInt()) / 5 * 5
+                    val nh = (startH + ((e.rawY - downY) / k).toInt()) / 5 * 5
+                    auto = false
+                    w = nw.coerceIn(WIDGET_W_MIN, maxW)
+                    h = nh.coerceIn(WIDGET_H_MIN, maxH)
+                    place()
+                    true
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    dragging = false
+                    fitScale()
+                    place()
+                    true
+                }
+                else -> false
+            }
+        }
+
+        fun chip(text: String, onClick: () -> Unit) = TextView(this).apply {
+            this.text = text
+            textSize = Ui.TEXT_SECONDARY
+            bold()
+            gravity = Gravity.CENTER
+            setTextColor(Ui.TEXT)
+            minHeight = dp(40)
+            setPadding(dp(8), dp(8), dp(8), dp(8))
+            background = bg(Ui.CONTROL, capsule = true)
+            isClickable = true
+            setOnClickListener { onClick() }
+            asButton()
+        }
+        val chips = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        listOf(
+            chip(getString(R.string.widget_size_auto)) { setSize(autoW, autoH, true) },
+            chip(getString(R.string.widget_size_small)) { setSize(200, 120, false) },
+            chip(getString(R.string.widget_size_medium)) { setSize(300, 200, false) },
+            chip(getString(R.string.widget_size_large)) { setSize(400, 340, false) }
+        ).forEachIndexed { i, c ->
+            chips.addView(c, LinearLayout.LayoutParams(0, WRAP, 1f).apply { if (i > 0) marginStart = dp(8) })
+        }
 
         val box = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(24), dp(8), dp(24), dp(4))
         }
-        box.addView(note(getString(R.string.widget_size_note)))
-        box.addTop(slider(getString(R.string.widget_size_w), WIDGET_W_MIN.toFloat(), WIDGET_W_MAX.toFloat(), w.toFloat(), " dp") { w = it }, 20)
-        box.addTop(slider(getString(R.string.widget_size_h), WIDGET_H_MIN.toFloat(), WIDGET_H_MAX.toFloat(), h.toFloat(), " dp") { h = it }, 20)
+        box.addView(note(getString(R.string.widget_size_preview_note)))
+        box.addView(stage, LinearLayout.LayoutParams(MATCH, stageH).apply { topMargin = dp(14) })
+        box.addTop(readout, 12)
+        box.addTop(chips, 12)
+
+        val listening = WidgetHost.acquire(this)
+        // Widget yang belum pernah diperbarui bisa tampil kosong sampai penyedianya diminta mengirim ulang konten.
+        WidgetHost.requestUpdate(this, id, info)
+        box.postDelayed({ WidgetHost.requestUpdate(this, id, info) }, 1500)
 
         MaterialAlertDialogBuilder(this)
             .setTitle(getString(R.string.widget_size_dialog_title, label))
-            .setView(box)
-            .setPositiveButton(R.string.save) { _, _ -> prefs.setWidgetSize(id, w to h) }
-            .setNeutralButton(R.string.widget_size_reset) { _, _ -> prefs.setWidgetSize(id, null) }
+            .setView(ScrollView(this).apply { addView(box) })
+            .setPositiveButton(R.string.save) { _, _ -> prefs.setWidgetSize(id, if (auto) null else w to h) }
             .setNegativeButton(R.string.cancel, null)
+            .setOnDismissListener { if (listening) WidgetHost.release(this) }
             .show()
     }
 
@@ -1739,7 +1905,12 @@ class MainActivity : AppCompatActivity() {
         val started = runCatching {
             WidgetHost.get(this).startAppWidgetConfigureActivityForResult(this, id, 0, REQ_WIDGET_CONFIG, null)
         }.isSuccess
-        if (!started) cancelPendingWidget(true)
+        if (!started) {
+            // Layar pengaturan beberapa widget menolak dibuka oleh aplikasi lain. Widget tetap ditambahkan dengan
+            // pengaturan bawaannya daripada gagal total.
+            toast(R.string.widgets_config_failed)
+            finishAddWidget(id)
+        }
     }
 
     private fun finishAddWidget(id: Int) {

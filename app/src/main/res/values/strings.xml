@@ -262,17 +262,22 @@
     <string name="widgets_size">Widget card size</string>
     <string name="widgets_size_title">Choose a widget to resize</string>
     <string name="widget_size_dialog_title">Card size: %1$s</string>
-    <string name="widget_size_note">Sets the size of the card that opens beside the panel. Sizes are in dp and are limited to the space available on screen.</string>
-    <string name="widget_size_w">Width</string>
-    <string name="widget_size_h">Height</string>
     <string name="widget_size_auto">Automatic</string>
     <string name="widget_size_dp">%1$d × %2$d dp</string>
-    <string name="widget_size_reset">Use automatic</string>
+    <string name="widget_size_preview_note">Drag the round handle at the corner or pick a preset. The widget is shown live, scaled down to fit.</string>
+    <string name="widget_size_small">Small</string>
+    <string name="widget_size_medium">Medium</string>
+    <string name="widget_size_large">Large</string>
+    <string name="widget_size_auto_dp">Automatic (%1$d × %2$d dp)</string>
+    <string name="widget_size_handle">Drag to resize</string>
+    <string name="widget_error_title">This widget can\'t be shown here</string>
+    <string name="widget_error_reason">Reason: %1$s</string>
+    <string name="widgets_config_failed">The setup screen of this widget could not be opened, so it was added with its default settings.</string>
     <string name="widgets_close_tap">Close panel after tapping a widget</string>
     <string name="widgets_close_tap_desc">Off keeps the panel open, so buttons like skip 10 seconds can be tapped again and again. Turn it on if you want widgets that open an app to close the panel.</string>
     <string name="tut_sec_widgets">Widgets</string>
     <string name="tut_widgets_t">Using widgets</string>
-    <string name="tut_widgets_b">Open Settings, Widgets, tap Add widget, and choose one. Android asks for permission the first time. In the panel, swipe to the Widgets page and tap a widget to open it in a card beside the panel. Tap outside the card to close it. The panel stays open when you tap something in a widget, so buttons can be tapped repeatedly. To change the size of a card, open Widgets, tap Widget card size, and pick a widget. To make the panel close after a tap instead, turn on Close panel after tapping a widget.</string>
+    <string name="tut_widgets_b">Open Settings, Widgets, tap Add widget, and choose one. Android asks for permission the first time. In the panel, swipe to the Widgets page and tap a widget to open it in a card beside the panel. Tap outside the card to close it. The panel stays open when you tap something in a widget, so buttons can be tapped repeatedly. To change the size of a card, open Widgets, tap Widget card size, pick a widget, then drag the corner handle or choose a preset while watching the live preview. To make the panel close after a tap instead, turn on Close panel after tapping a widget.</string>
     <string name="tr_widget_t">A widget looks empty</string>
     <string name="tr_widget_b">Open the app that owns the widget once so it can load its data, then open the card again. If it stays empty, remove the widget and add it again.</string>
 </resources>

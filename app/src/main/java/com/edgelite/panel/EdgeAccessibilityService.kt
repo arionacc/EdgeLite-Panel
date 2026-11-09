@@ -683,15 +683,7 @@ class EdgeAccessibilityService : AccessibilityService() {
     }
 
     /** Meminta penyedia widget mengirim ulang konten lewat siaran pembaruan standar. */
-    private fun refreshWidget(id: Int, info: AppWidgetProviderInfo) {
-        runCatching {
-            sendBroadcast(
-                Intent(AppWidgetManager.ACTION_APPWIDGET_UPDATE)
-                    .setComponent(info.provider)
-                    .putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, intArrayOf(id))
-            )
-        }
-    }
+    private fun refreshWidget(id: Int, info: AppWidgetProviderInfo) = WidgetHost.requestUpdate(this, id, info)
 
     private fun hideWidgetCard(animated: Boolean = true) {
         val v = widgetCard ?: return
@@ -708,13 +700,13 @@ class EdgeAccessibilityService : AccessibilityService() {
     /** Tuan rumah hanya mendengarkan pembaruan selama panel terbuka dan ada kartu widget. */
     private fun startWidgetListening() {
         if (widgetListening) return
-        widgetListening = runCatching { WidgetHost.get(this).startListening() }.isSuccess
+        widgetListening = WidgetHost.acquire(this)
     }
 
     private fun stopWidgetListening() {
         if (!widgetListening) return
         widgetListening = false
-        runCatching { WidgetHost.get(this).stopListening() }
+        WidgetHost.release(this)
     }
 
     /** Satu aksi akses cepat di halaman kedua, dengan ukuran dan susunan yang sama dengan item aplikasi. */
