@@ -275,6 +275,19 @@
     <string name="widget_icon_pack_choose">Pilih paket ikon</string>
     <string name="widget_icon_pack_title">Paket ikon</string>
     <string name="widget_icon_no_packs">Paket ikon tidak ditemukan. Pasang paket ikon jenis yang dipakai peluncur Nova atau ADW, lalu buka lagi.</string>
+    <string name="widgets_arrange">Nama, warna, dan urutan</string>
+    <string name="widgets_arrange_title">Atur widget</string>
+    <string name="widgets_arrange_note">Pakai tombol panah untuk mengubah urutan ikon di halaman Widget. Ketuk satu widget untuk mengganti nama atau memberi warna.</string>
+    <string name="widget_style_edit">Ubah %1$s</string>
+    <string name="widget_style_title">Widget: %1$s</string>
+    <string name="widget_style_note">Nama tampil di bawah ikon di panel bila nama aplikasi dinyalakan. Warna dipakai sebagai latar ikon dan garis tepi kartu. Kosongkan nama untuk memakai nama asli widget.</string>
+    <string name="widget_name_label">Nama</string>
+    <string name="widget_name_hint">Nama (kosong: %1$s)</string>
+    <string name="widget_color_label">Warna</string>
+    <string name="widget_color_default">Tanpa warna</string>
+    <string name="widget_color_hex">Warna kustom (#RRGGBB)</string>
+    <string name="widgets_pos">Posisi kartu widget</string>
+    <string name="widgets_pos_note">Tinggi kartu widget di layar: 0% di atas, 50% di tengah, 100% di bawah.</string>
     <string name="widget_error_title">Widget ini tidak bisa ditampilkan di sini</string>
     <string name="widget_error_reason">Penyebab: %1$s</string>
     <string name="widgets_config_failed">Layar pengaturan widget ini tidak bisa dibuka, jadi widget ditambahkan dengan pengaturan bawaannya.</string>
@@ -282,7 +295,15 @@
     <string name="widgets_close_tap_desc">Bila mati, panel tetap terbuka sehingga tombol seperti maju 10 detik bisa diketuk berulang. Nyalakan bila ingin widget yang membuka aplikasi ikut menutup panel.</string>
     <string name="tut_sec_widgets">Widget</string>
     <string name="tut_widgets_t">Memakai widget</string>
-    <string name="tut_widgets_b">Buka Pengaturan, Widget, ketuk Tambah widget, lalu pilih satu. Android meminta izin saat pertama kali. Di panel, geser ke halaman Widget dan ketuk widget untuk membukanya dalam kartu di samping panel. Ketuk di luar kartu untuk menutupnya. Panel tetap terbuka saat bagian widget diketuk, jadi tombol bisa diketuk berulang. Untuk mengubah ukuran kartu, buka Widget, ketuk Ukuran kartu widget, pilih widget, lalu seret pegangan di sudut atau pilih ukuran siap pakai sambil melihat pratinjau langsung. Untuk mengganti ikon widget di panel, buka Widget, ketuk Ikon widget, pilih widget, lalu pilih ikon EdgeLite, ikon aplikasi terpasang, atau ikon dari paket ikon yang terpasang. Agar panel menutup setelah diketuk, nyalakan Tutup panel setelah widget disentuh.</string>
+    <string name="tut_widgets_b">Buka Pengaturan, Widget, ketuk Tambah widget, lalu pilih satu. Android meminta izin saat pertama kali. Di panel, geser ke halaman Widget dan ketuk widget untuk membukanya dalam kartu di samping panel. Ketuk di luar kartu untuk menutupnya. Panel tetap terbuka saat bagian widget diketuk, jadi tombol bisa diketuk berulang. Untuk mengubah ukuran kartu, buka Widget, ketuk Ukuran kartu widget, pilih widget, lalu seret pegangan di sudut atau pilih ukuran siap pakai sambil melihat pratinjau langsung. Untuk mengganti ikon widget di panel, buka Widget, ketuk Ikon widget, pilih widget, lalu pilih ikon EdgeLite, ikon aplikasi terpasang, atau ikon dari paket ikon yang terpasang. Agar panel menutup setelah diketuk, nyalakan Tutup panel setelah widget disentuh. Untuk mengganti nama widget, memberi warna, atau mengubah urutan ikon, buka Widget, ketuk Nama, warna, dan urutan. Posisi kartu widget menggeser kartu naik atau turun di layar.</string>
     <string name="tr_widget_t">Widget tampak kosong</string>
     <string name="tr_widget_b">Buka aplikasi pemilik widget itu sekali supaya datanya dimuat, lalu buka kartunya lagi. Bila tetap kosong, hapus widget lalu tambahkan lagi.</string>
+    <string name="menu_changelog">Yang baru</string>
+    <string name="changelog_title">Yang baru di %1$s</string>
+    <string name="changelog_try">Coba</string>
+    <string name="cl_widget_name">Widget bisa diganti namanya. Nama tampil di bawah ikon di panel.</string>
+    <string name="cl_widget_color">Widget bisa diberi warna, dipakai di belakang ikon dan sebagai garis tepi kartu.</string>
+    <string name="cl_widget_order">Urutan ikon widget bisa diubah dengan tombol panah.</string>
+    <string name="cl_widget_pos">Slider baru menggeser kartu widget naik atau turun di layar.</string>
+    <string name="cl_whatsnew">Layar Yang baru ini. Dibuka dari menu dan tampil sekali setelah pembaruan.</string>
 </resources>

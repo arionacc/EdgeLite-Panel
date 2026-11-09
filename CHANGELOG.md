@@ -4,6 +4,19 @@ All notable changes to EdgeLite Panel are listed here, newest first.
 
 Versions 1.0.4 and 1.2.6 were never published. Their changes are included in 1.0.5 and 1.2.7.
 
+## 1.7.0
+
+### Added
+- Widget names. Tap Name, color, and order in the Widgets settings, then tap a widget to give it your own name. The name shows under the icon in the panel. Leave it empty to use the widget's own name.
+- Widget colors. Pick one of nine colors or type a #RRGGBB code. The color is used as a round background behind the icon and as the border of the widget card.
+- Widget order. The same screen has up and down arrows to change the order of the icons on the Widgets page. Before this, the order was the order in which the widgets were added.
+- Widget card position. A new slider moves the widget card up or down on screen (0% top, 50% middle, 100% bottom, the default is the middle).
+- What's new. The menu (three dots) has a new What's new entry that lists the changes of the installed version. Each item has a Try it button that opens the new feature. It also opens once by itself after an update. The first time this feature runs it only records the version, so it does not open on a fresh install.
+
+### Notes
+- Names, colors, and order are tied to this phone, like the widgets themselves, so they are not part of exported settings. The card position is exported.
+- Dragging icons directly in the panel and a horizontal card position are not included.
+
 ## 1.6.0
 
 ### Added

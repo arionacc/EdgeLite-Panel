@@ -41,6 +41,15 @@ object WidgetIcons {
         return body.substring(0, i) to body.substring(i + 1)
     }
 
+    /** Warna isi (gelap atau terang) yang terbaca di atas latar [bg], dipakai untuk glyph di atas warna kustom. */
+    fun onColor(bg: Int): Int {
+        val r = (bg shr 16) and 0xFF
+        val g = (bg shr 8) and 0xFF
+        val b = bg and 0xFF
+        val lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255.0
+        return if (lum > 0.6) 0xFF0F0F0F.toInt() else 0xFFEDEDED.toInt()
+    }
+
     /** Apakah [choice] berbentuk pilihan yang sah. Dipakai saat membaca dari pengaturan. */
     fun isValid(choice: String): Boolean =
         Regex("([qa]:[A-Za-z0-9_.]+|p:[A-Za-z0-9_.]+/[A-Za-z0-9_.]+)").matches(choice)

@@ -18,6 +18,7 @@ import android.os.Process
 import android.os.PowerManager
 import android.provider.Settings
 import android.text.Editable
+import android.text.TextUtils
 import android.text.TextWatcher
 import android.util.TypedValue
 import android.view.Gravity
@@ -103,6 +104,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var widgetManage: View
     private lateinit var widgetSize: View
     private lateinit var widgetIcon: View
+    private lateinit var widgetArrange: View
+    private lateinit var widgetPos: View
 
     /** ID widget yang sedang ditambahkan, menunggu izin atau layar konfigurasinya selesai. */
     private var pendingWidgetId = -1
@@ -131,6 +134,10 @@ class MainActivity : AppCompatActivity() {
     /** Judul kategori yang sedang terbuka. Disimpan agar tidak menutup sendiri saat dibangun ulang. */
     private val openCategories = mutableSetOf<String>()
 
+    /** Pembuka tiap kategori menurut judulnya, dipakai pintasan di dialog Yang baru. */
+    private val categoryOpeners = mutableMapOf<String, () -> Unit>()
+    private var pageScroll: ScrollView? = null
+
     /** Orientasi yang sedang diedit di halaman pengaturan. */
     private var editOrient = Orient.PORTRAIT
 
@@ -141,6 +148,14 @@ class MainActivity : AppCompatActivity() {
         editOrient = orientOf(dm.widthPixels, dm.heightPixels)
         openCategories.add(getString(R.string.cat_display))
         setContentView(buildUi())
+        // Dialog Yang baru tampil sekali setelah pembaruan. Pertama kali (belum ada catatan) hanya dicatat.
+        val code = appVersionCode()
+        val seen = prefs.changelogSeen
+        if (seen == 0) prefs.changelogSeen = code
+        else if (seen < code) {
+            prefs.changelogSeen = code
+            window.decorView.post { if (!isFinishing && !isDestroyed) showChangelog() }
+        }
     }
 
     override fun onResume() {
@@ -504,6 +519,7 @@ class MainActivity : AppCompatActivity() {
             )
         }
         setOpen(title in openCategories, false)
+        categoryOpeners[title] = { if (body.visibility != View.VISIBLE) head.performClick() }
         head.setOnClickListener {
             val open = body.visibility != View.VISIBLE
             if (open) openCategories.add(title) else openCategories.remove(title)
@@ -755,7 +771,17 @@ class MainActivity : AppCompatActivity() {
             b.addTop(widgetSize, 10)
             widgetIcon = pill(getString(R.string.widgets_icon), false) { pickWidgetForIcon() }
             b.addTop(widgetIcon, 10)
+            widgetArrange = pill(getString(R.string.widgets_arrange), false) { showWidgetArrangeDialog() }
+            b.addTop(widgetArrange, 10)
             b.addTop(widgetManage, 10)
+            widgetPos = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                addView(slider(
+                    getString(R.string.widgets_pos), 0f, 100f, prefs.widgetCardY.toFloat(), "%"
+                ) { prefs.widgetCardY = it })
+                addView(note(getString(R.string.widgets_pos_note)), LinearLayout.LayoutParams(MATCH, WRAP).apply { topMargin = dp(4) })
+            }
+            b.addTop(widgetPos, 20)
             b.addTop(
                 switchRow(
                     getString(R.string.widgets_close_tap), getString(R.string.widgets_close_tap_desc),
@@ -799,6 +825,23 @@ class MainActivity : AppCompatActivity() {
             setBackgroundColor(Ui.BG)
             overScrollMode = View.OVER_SCROLL_NEVER
             addView(root)
+            pageScroll = this
+        }
+    }
+
+    /** Membuka kategori di halaman pengaturan lalu menggulir ke [target] (atau ke kategorinya bila null). */
+    private fun jumpToCategory(title: String, target: View? = null) {
+        categoryOpeners[title]?.invoke()
+        val scroll = pageScroll ?: return
+        scroll.post {
+            val view = target ?: return@post
+            var y = 0
+            var v: View = view
+            while (v !== scroll && v.parent is View) {
+                y += v.top
+                v = v.parent as View
+            }
+            scroll.smoothScrollTo(0, (y - dp(24)).coerceAtLeast(0))
         }
     }
 
@@ -1027,11 +1070,13 @@ class MainActivity : AppCompatActivity() {
         PopupMenu(this, anchor).apply {
             menu.add(0, 0, 0, getString(R.string.menu_tutorial))
             menu.add(0, 1, 1, getString(R.string.menu_developer))
-            menu.add(0, 3, 2, getString(R.string.menu_about))
+            menu.add(0, 2, 2, getString(R.string.menu_changelog))
+            menu.add(0, 3, 3, getString(R.string.menu_about))
             setOnMenuItemClickListener { item ->
                 when (item.itemId) {
                     0 -> showTutorial()
                     1 -> openDeveloperOptions()
+                    2 -> showChangelog()
                     3 -> showAbout()
                 }
                 true
@@ -1343,6 +1388,67 @@ class MainActivity : AppCompatActivity() {
         "?"
     }
 
+    @Suppress("DEPRECATION")
+    private fun appVersionCode(): Int = try {
+        packageManager.getPackageInfo(packageName, 0).versionCode
+    } catch (_: Exception) {
+        0
+    }
+
+    /** Satu butir perubahan: teksnya, dan pintasan opsional ke fitur barunya. */
+    private class Change(@StringRes val text: Int, val shortcut: (() -> Unit)? = null)
+
+    /**
+     * Perubahan versi yang sedang terpasang. Hanya versi ini yang ditampilkan, jadi tiap rilis baru mengganti
+     * daftar ini beserta string `cl_*` di strings.xml. Pintasan membuka fitur barunya langsung.
+     */
+    private fun currentChanges(): List<Change> {
+        // Fitur widget butuh widget: bila belum ada, pintasan membuka kategori Widget.
+        val arrange = {
+            if (WidgetHost.validIds(this, prefs.widgets).isEmpty()) {
+                jumpToCategory(getString(R.string.cat_widgets))
+                toast(R.string.widgets_none)
+            } else showWidgetArrangeDialog()
+        }
+        return listOf(
+            Change(R.string.cl_widget_name, arrange),
+            Change(R.string.cl_widget_color, arrange),
+            Change(R.string.cl_widget_order, arrange),
+            Change(R.string.cl_widget_pos) { jumpToCategory(getString(R.string.cat_widgets), widgetPos) },
+            Change(R.string.cl_whatsnew)
+        )
+    }
+
+    /** Dialog Yang baru: perubahan versi terpasang, tiap butir dengan tombol pintasan ke fiturnya. */
+    private fun showChangelog() {
+        var dialog: androidx.appcompat.app.AlertDialog? = null
+        val box = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(24), dp(4), dp(24), dp(12))
+        }
+        currentChanges().forEachIndexed { i, change ->
+            val card = sheetCard().apply { setPadding(dp(20), dp(16), dp(20), dp(16)) }
+            card.addView(TextView(this).apply {
+                text = getString(change.text)
+                textSize = Ui.TEXT_BODY
+                setTextColor(Ui.TEXT)
+                setLineSpacing(0f, 1.2f)
+            })
+            change.shortcut?.let { go ->
+                card.addTop(pill(getString(R.string.changelog_try), false) {
+                    dialog?.dismiss()
+                    go()
+                }, 12)
+            }
+            box.addTop(card, if (i == 0) 0 else 10)
+        }
+        dialog = MaterialAlertDialogBuilder(this)
+            .setTitle(getString(R.string.changelog_title, appVersionName()))
+            .setView(ScrollView(this).apply { addView(box) })
+            .setPositiveButton(R.string.close, null)
+            .show()
+    }
+
     private fun showAbout() {
         val box = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -1557,18 +1663,24 @@ class MainActivity : AppCompatActivity() {
         val saved = prefs.widgets
         val valid = WidgetHost.validIds(this, saved)
         if (valid.size != saved.size) prefs.widgets = valid
-        val pm = packageManager
-        val names = valid.mapNotNull { id ->
-            WidgetHost.info(this, id)?.let { runCatching { it.loadLabel(pm).toString() }.getOrNull() }
-        }
+        val names = valid.map { widgetLabel(it) }
         widgetSummary.text =
             if (names.isEmpty()) getString(R.string.widgets_none) else names.joinToString(", ")
         widgetManage.visibility = if (names.isEmpty()) View.GONE else View.VISIBLE
         widgetSize.visibility = widgetManage.visibility
         widgetIcon.visibility = widgetManage.visibility
+        widgetArrange.visibility = widgetManage.visibility
+        widgetPos.visibility = widgetManage.visibility
         prefs.pruneWidgetSizes(valid)
         prefs.pruneWidgetIcons(valid)
+        prefs.pruneWidgetNames(valid)
+        prefs.pruneWidgetColors(valid)
     }
+
+    /** Nama widget untuk ditampilkan: nama kustom, bila tidak ada nama dari penyedia widget. */
+    private fun widgetLabel(id: Int): String = prefs.getWidgetName(id)
+        ?: WidgetHost.info(this, id)?.let { runCatching { it.loadLabel(packageManager).toString() }.getOrNull() }
+        ?: id.toString()
 
     /** Memilih widget yang ukuran kartunya mau diatur. Tiap baris menampilkan ukuran saat ini. */
     private fun pickWidgetForSize() {
@@ -1576,7 +1688,7 @@ class MainActivity : AppCompatActivity() {
         if (ids.isEmpty()) return
         val pm = packageManager
         val names = ids.map { id ->
-            val label = WidgetHost.info(this, id)?.let { runCatching { it.loadLabel(pm).toString() }.getOrNull() } ?: id.toString()
+            val label = widgetLabel(id)
             val size = prefs.getWidgetSize(id)
                 ?.let { getString(R.string.widget_size_dp, it.first, it.second) }
                 ?: getString(R.string.widget_size_auto)
@@ -1598,7 +1710,7 @@ class MainActivity : AppCompatActivity() {
     @Suppress("ClickableViewAccessibility")
     private fun showWidgetSizeDialog(id: Int) {
         val info = WidgetHost.info(this, id) ?: return
-        val label = runCatching { info.loadLabel(packageManager).toString() }.getOrDefault("")
+        val label = widgetLabel(id)
         val d = resources.displayMetrics.density
         val growW = (info.resizeMode and AppWidgetProviderInfo.RESIZE_HORIZONTAL) != 0
         val growH = (info.resizeMode and AppWidgetProviderInfo.RESIZE_VERTICAL) != 0
@@ -1788,7 +1900,7 @@ class MainActivity : AppCompatActivity() {
         if (ids.isEmpty()) return
         val pm = packageManager
         val names = ids.map { id ->
-            val label = WidgetHost.info(this, id)?.let { runCatching { it.loadLabel(pm).toString() }.getOrNull() } ?: id.toString()
+            val label = widgetLabel(id)
             val state = getString(
                 if (prefs.getWidgetIcon(id) != null) R.string.widget_icon_state_custom else R.string.widget_icon_state_default
             )
@@ -1811,7 +1923,7 @@ class MainActivity : AppCompatActivity() {
     private fun showWidgetIconDialog(id: Int) {
         val info = WidgetHost.info(this, id) ?: return
         val pm = packageManager
-        val label = runCatching { info.loadLabel(pm).toString() }.getOrDefault("")
+        val label = widgetLabel(id)
         val providerIcon = runCatching { info.loadIcon(this, resources.displayMetrics.densityDpi) }.getOrNull()
             ?: pm.defaultActivityIcon
 
@@ -2046,6 +2158,233 @@ class MainActivity : AppCompatActivity() {
         runCatching { packageManager.getApplicationLabel(packageManager.getApplicationInfo(pkg, 0)).toString() }
             .getOrDefault(pkg)
 
+    /** Warna siap pakai di dialog gaya widget. Selain ini pengguna bisa mengetik kode heksadesimal sendiri. */
+    private val widgetPalette = intArrayOf(
+        0xFFE5484D.toInt(), 0xFFF76B15.toInt(), 0xFFF5B800.toInt(), 0xFF30A46C.toInt(),
+        0xFF12A594.toInt(), 0xFF3E63DD.toInt(), 0xFF8E4EC6.toInt(), 0xFFD6409F.toInt(),
+        0xFF8B8D98.toInt()
+    )
+
+    private fun hex(c: Int) = String.format("#%06X", c and 0xFFFFFF)
+
+    /** Mengurai `#RRGGBB` atau `RRGGBB`. Null bila bentuknya tidak sah. */
+    private fun parseHex(t: String): Int? {
+        val m = Regex("#?([0-9A-Fa-f]{6})").matchEntire(t.trim()) ?: return null
+        return (m.groupValues[1].toLong(16).toInt()) or 0xFF000000.toInt()
+    }
+
+    /** Tombol panah naik atau turun di daftar urutan widget. */
+    private fun moveArrow(res: Int, desc: String, enabled: Boolean, onClick: () -> Unit) = ImageView(this).apply {
+        setImageResource(res)
+        setColorFilter(Ui.TEXT)
+        setPadding(dp(12), dp(12), dp(12), dp(12))
+        contentDescription = desc
+        alpha = if (enabled) 1f else 0.3f
+        isEnabled = enabled
+        if (enabled) {
+            background = rowRipple()
+            setOnClickListener { onClick() }
+        }
+    }
+
+    /**
+     * Mengatur widget di halaman Widget panel: urutan lewat tombol panah (tersimpan langsung), dan ketukan pada
+     * satu baris membuka dialog nama dan warna. Urutan di sini sama dengan urutan ikon di panel.
+     */
+    private fun showWidgetArrangeDialog() {
+        val ids = WidgetHost.validIds(this, prefs.widgets).toMutableList()
+        if (ids.isEmpty()) return
+        val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        fun render() {
+            list.removeAllViews()
+            ids.forEachIndexed { i, id ->
+                val name = widgetLabel(id)
+                val color = prefs.getWidgetColor(id)
+                val row = LinearLayout(this).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER_VERTICAL
+                    minimumHeight = dp(Ui.CONTROL_HEIGHT_DP)
+                }
+                val body = LinearLayout(this).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER_VERTICAL
+                    background = rowRipple()
+                    isClickable = true
+                    contentDescription = getString(R.string.widget_style_edit, name)
+                    setOnClickListener { showWidgetStyleDialog(id) { render() } }
+                }
+                body.addView(View(this).apply {
+                    background = GradientDrawable().apply {
+                        shape = GradientDrawable.OVAL
+                        setColor(color ?: Ui.CONTROL)
+                    }
+                }, LinearLayout.LayoutParams(dp(20), dp(20)).apply { marginStart = dp(4); marginEnd = dp(12) })
+                val texts = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+                texts.addView(TextView(this).apply {
+                    text = name
+                    textSize = Ui.TEXT_BODY
+                    bold()
+                    setTextColor(Ui.TEXT)
+                    maxLines = 1
+                    ellipsize = TextUtils.TruncateAt.END
+                })
+                if (prefs.getWidgetName(id) != null) {
+                    val original = WidgetHost.info(this, id)
+                        ?.let { runCatching { it.loadLabel(packageManager).toString() }.getOrNull() }
+                    if (!original.isNullOrEmpty()) texts.addView(TextView(this).apply {
+                        text = original
+                        textSize = Ui.TEXT_CAPTION
+                        setTextColor(Ui.MUTED_HI)
+                        maxLines = 1
+                        ellipsize = TextUtils.TruncateAt.END
+                    })
+                }
+                body.addView(texts, LinearLayout.LayoutParams(0, WRAP, 1f))
+                row.addView(body, LinearLayout.LayoutParams(0, dp(Ui.CONTROL_HEIGHT_DP), 1f))
+                fun move(dir: Int) {
+                    val j = i + dir
+                    if (j !in ids.indices) return
+                    ids[i] = ids[j].also { ids[j] = ids[i] }
+                    prefs.widgets = ids.toList()
+                    EdgeAccessibilityService.refresh(this)
+                    render()
+                }
+                row.addView(
+                    moveArrow(R.drawable.ic_qa_arrow_up, getString(R.string.page_move_up, name), i > 0) { move(-1) },
+                    LinearLayout.LayoutParams(dp(Ui.CONTROL_HEIGHT_DP), dp(Ui.CONTROL_HEIGHT_DP))
+                )
+                row.addView(
+                    moveArrow(R.drawable.ic_qa_arrow_down, getString(R.string.page_move_down, name), i < ids.size - 1) { move(1) },
+                    LinearLayout.LayoutParams(dp(Ui.CONTROL_HEIGHT_DP), dp(Ui.CONTROL_HEIGHT_DP))
+                )
+                list.addView(row, LinearLayout.LayoutParams(MATCH, WRAP))
+            }
+        }
+        render()
+        val box = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(24), dp(8), dp(24), dp(8))
+        }
+        box.addView(note(getString(R.string.widgets_arrange_note)))
+        box.addTop(list, 12)
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.widgets_arrange_title)
+            .setView(ScrollView(this).apply { addView(box) })
+            .setPositiveButton(R.string.close, null)
+            .setOnDismissListener { refreshWidgets() }
+            .show()
+    }
+
+    /** Dialog nama dan warna satu widget. Disimpan saat Simpan diketuk, lalu [onDone] dipanggil. */
+    private fun showWidgetStyleDialog(id: Int, onDone: () -> Unit) {
+        val original = WidgetHost.info(this, id)
+            ?.let { runCatching { it.loadLabel(packageManager).toString() }.getOrNull() } ?: ""
+        var color: Int? = prefs.getWidgetColor(id)
+
+        fun field(hint: String, filterLen: Int) = EditText(this).apply {
+            this.hint = hint
+            textSize = Ui.TEXT_BODY
+            setTextColor(Ui.TEXT)
+            setHintTextColor(Ui.MUTED)
+            isSingleLine = true
+            filters = arrayOf(android.text.InputFilter.LengthFilter(filterLen))
+            minHeight = dp(Ui.CONTROL_HEIGHT_DP)
+            setPadding(dp(20), dp(8), dp(20), dp(8))
+            background = bg(Ui.CONTROL, capsule = true)
+            imeOptions = EditorInfo.IME_ACTION_DONE
+        }
+        val nameField = field(getString(R.string.widget_name_hint, original), WIDGET_NAME_MAX).apply {
+            setText(prefs.getWidgetName(id) ?: "")
+            contentDescription = getString(R.string.widget_name_label)
+        }
+        val hexField = field(getString(R.string.widget_color_hex), 7).apply {
+            setText(color?.let { hex(it) } ?: "")
+            contentDescription = getString(R.string.widget_color_hex)
+        }
+
+        val swatches = ArrayList<Pair<View, Int?>>()
+        var updatingHex = false
+        fun styleSwatches() {
+            swatches.forEach { (v, c) ->
+                val selected = c == color
+                v.background = GradientDrawable().apply {
+                    shape = GradientDrawable.OVAL
+                    setColor(c ?: Ui.CONTROL)
+                    if (selected) setStroke(dp(3), Ui.TEXT) else if (c == null) setStroke(dp(1), Ui.MUTED)
+                }
+            }
+        }
+        fun swatch(c: Int?): View {
+            val v = TextView(this).apply {
+                gravity = Gravity.CENTER
+                textSize = Ui.TEXT_CAPTION
+                setTextColor(Ui.TEXT)
+                if (c == null) text = "×"
+                contentDescription = if (c == null) getString(R.string.widget_color_default) else hex(c)
+                isClickable = true
+                setOnClickListener {
+                    color = c
+                    updatingHex = true
+                    hexField.setText(c?.let { hex(it) } ?: "")
+                    updatingHex = false
+                    styleSwatches()
+                }
+            }
+            swatches.add(v to c)
+            return v
+        }
+        val all = listOf<Int?>(null) + widgetPalette.toList()
+        val grid = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        all.chunked(5).forEach { chunk ->
+            val r = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+            chunk.forEach { c ->
+                r.addView(swatch(c), LinearLayout.LayoutParams(dp(40), dp(40)).apply {
+                    marginEnd = dp(12); bottomMargin = dp(12)
+                })
+            }
+            grid.addView(r)
+        }
+        styleSwatches()
+        hexField.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, st: Int, c: Int, a: Int) {}
+            override fun onTextChanged(s: CharSequence?, st: Int, b: Int, c: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                if (updatingHex) return
+                val t = s?.toString() ?: ""
+                if (t.isBlank()) color = null else parseHex(t)?.let { color = it } ?: return
+                styleSwatches()
+            }
+        })
+
+        fun label(t: String) = TextView(this).apply {
+            text = t
+            textSize = Ui.TEXT_BODY
+            setTextColor(Ui.MUTED_HI)
+        }
+        val box = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(24), dp(8), dp(24), dp(8))
+        }
+        box.addView(note(getString(R.string.widget_style_note)))
+        box.addTop(label(getString(R.string.widget_name_label)), 16)
+        box.addTop(nameField, 6)
+        box.addTop(label(getString(R.string.widget_color_label)), 16)
+        box.addTop(grid, 10)
+        box.addTop(hexField, 0)
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle(getString(R.string.widget_style_title, widgetLabel(id)))
+            .setView(ScrollView(this).apply { addView(box) })
+            .setPositiveButton(R.string.save) { _, _ ->
+                prefs.setWidgetName(id, nameField.text?.toString())
+                prefs.setWidgetColor(id, color)
+                EdgeAccessibilityService.refresh(this)
+                onDone()
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
     /** Membaca daftar penyedia widget di thread latar (lambat), lalu menampilkan dialog pilihan. */
     private fun pickWidget() {
         val app = applicationContext
@@ -2223,7 +2562,7 @@ class MainActivity : AppCompatActivity() {
         val pm = packageManager
         val names = ids.map { id ->
             WidgetHost.info(this, id)?.let {
-                "${runCatching { it.loadLabel(pm).toString() }.getOrDefault("")} (${appLabelOf(it.provider.packageName)})"
+                "${widgetLabel(id)} (${appLabelOf(it.provider.packageName)})"
             } ?: id.toString()
         }
         val keep = BooleanArray(ids.size) { true }
@@ -2236,6 +2575,8 @@ class MainActivity : AppCompatActivity() {
                 prefs.widgets = ids.filterIndexed { i, _ -> keep[i] }
                 prefs.pruneWidgetSizes(prefs.widgets)
                 prefs.pruneWidgetIcons(prefs.widgets)
+                prefs.pruneWidgetNames(prefs.widgets)
+                prefs.pruneWidgetColors(prefs.widgets)
                 refreshWidgets()
                 EdgeAccessibilityService.refresh(this)
             }
