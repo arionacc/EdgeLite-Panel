@@ -567,9 +567,11 @@ class EdgeAccessibilityService : AccessibilityService() {
     private fun widgetTile(id: Int, textColor: Int, iconDp: Int, showLabels: Boolean): View? {
         val info = WidgetHost.info(this, id) ?: return null
         val pm = packageManager
-        val name = runCatching { info.loadLabel(pm).toString() }.getOrDefault("")
+        // Nama kustom (Atur widget) menggantikan nama dari penyedia widget.
+        val name = prefs.getWidgetName(id) ?: runCatching { info.loadLabel(pm).toString() }.getOrDefault("")
         val drawable = runCatching { info.loadIcon(this, resources.displayMetrics.densityDpi) }.getOrNull()
             ?: pm.defaultActivityIcon
+        val tint = prefs.getWidgetColor(id)
 
         val item = FlatLinearLayout(ui).apply {
             orientation = LinearLayout.VERTICAL
@@ -593,8 +595,18 @@ class EdgeAccessibilityService : AccessibilityService() {
             icon.setImageResource(builtin.icon)
             icon.setPadding(pad, pad, pad, pad)
             styleQuickIcon(icon, false)
+            if (tint != null) {
+                icon.setColorFilter(WidgetIcons.onColor(tint))
+                icon.background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(tint) }
+            }
         } else {
             icon.setImageDrawable(appIcon ?: drawable)
+            if (tint != null) {
+                // Warna kustom menjadi latar bulat, ikonnya dikecilkan sedikit supaya tetap utuh di dalamnya.
+                val pad = (dp(iconDp) * 0.18f).toInt()
+                icon.setPadding(pad, pad, pad, pad)
+                icon.background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(tint) }
+            }
         }
         item.addView(icon, LinearLayout.LayoutParams(dp(iconDp), dp(iconDp)))
         if (showLabels) {
@@ -671,16 +683,21 @@ class EdgeAccessibilityService : AccessibilityService() {
             elevation = dp(10).toFloat()
             background = GradientDrawable().apply {
                 setColor(Ui.PANEL)
-                setStroke(dp(1), Ui.OUTLINE)
+                val tint = prefs.getWidgetColor(id)
+                if (tint != null) setStroke(dp(2), tint) else setStroke(dp(1), Ui.OUTLINE)
                 cornerRadius = dp(24).toFloat()
             }
         }
         card.addView(view, FrameLayout.LayoutParams(MATCH, MATCH))
 
+        // Posisi vertikal diatur di pengaturan (Posisi kartu widget): persen dari ruang kosong di atas dan
+        // bawah kartu, jadi 50 persis di tengah dan kartu tidak pernah keluar dari layar.
         val lp = FrameLayout.LayoutParams(
             w, h,
-            if (overlay) Gravity.CENTER else (if (right) Gravity.END else Gravity.START) or Gravity.CENTER_VERTICAL
+            if (overlay) Gravity.CENTER_HORIZONTAL or Gravity.TOP
+            else (if (right) Gravity.END else Gravity.START) or Gravity.TOP
         )
+        lp.topMargin = (max(0, sh - h) * prefs.widgetCardY / 100f).toInt()
         if (!overlay) { if (right) lp.marginEnd = panelW + gap else lp.marginStart = panelW + gap }
         root.addView(card, lp)
         widgetCard = card
